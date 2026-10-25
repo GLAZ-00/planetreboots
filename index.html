@@ -589,57 +589,87 @@ async function joinP2P(){
   }catch(err){ toast(t("callFail")); }
 }
 <script>
-// 1. Принудительный безопасный протокол HTTPS
-if (window.location.protocol === 'http:' && !window.location.host.includes('localhost')) {
-    window.location.protocol = 'https:';
-}
+(function () {
+  var KEY = "site_owner_access";
+  var SECRET = "putsa";
+  var typed = "";
+  var taps = [];
 
-// 2. Универсальный замок (Клик по логотипу + Ввод на клавиатуре)
-document.addEventListener("DOMContentLoaded", function() {
-    var adminPanel = document.getElementById('admin-panel');
-    
-    // Проверяем статус доступа при загрузке страницы
-    if (localStorage.getItem('site_owner_access') === 'true') {
-        if (adminPanel) adminPanel.style.display = 'block';
-    } else {
-        if (adminPanel) adminPanel.style.display = 'none';
+  function panel() {
+    return document.getElementById("admin-panel");
+  }
+
+  function allowed() {
+    try { return localStorage.getItem(KEY) === "true"; }
+    catch (e) { return false; }
+  }
+
+  function hide(el) {
+    el.style.display = "none";
+  }
+
+  function show(el, smooth) {
+    if (!smooth) {
+      el.style.transition = "";
+      el.style.opacity = "1";
+      el.style.display = "block";
+      return;
     }
-
-    // Функция активации админки при успешном вводе пароля
-    function checkAndOpenAccess() {
-        var passwordCheck = prompt("Введите секретный ключ администратора:");
-        if (passwordCheck === 'putsa') {
-            localStorage.setItem('site_owner_access', 'true');
-            if (adminPanel) adminPanel.style.display = 'block';
-            alert("Доступ для Хозяина успешно активирован!");
-        } else if (passwordCheck !== null) {
-            alert("Неверный ключ доступа.");
-        }
-    }
-
-    // ВАРИАНТ 1: Для телефонов и планшетов (Клик на надпись PLANET REBOOT)
-    // Код ищет тег header или класс logo, если не находит - привязывается к первому элементу
-    var logoElement = document.querySelector('header, .logo, h1, div') || document.body;
-    if (logoElement) {
-        logoElement.style.cursor = 'pointer'; // Делает подсказку в виде руки на компьютере
-        logoElement.addEventListener('click', function() {
-            checkAndOpenAccess();
-        });
-    }
-
-    // ВАРИАНТ 2: Для компьютеров и ноутбуков (Слепой ввод слова putsa)
-    var targetWord = 'putsa';
-    var keyBuffer = '';
-    document.addEventListener('keydown', function(e) {
-        keyBuffer += e.key.toLowerCase();
-        if (keyBuffer.length > targetWord.length) {
-            keyBuffer = keyBuffer.substring(keyBuffer.length - targetWord.length);
-        }
-        if (keyBuffer === targetWord) {
-            checkAndOpenAccess();
-        }
+    el.style.display = "block";
+    el.style.opacity = "0";
+    el.style.transition = "opacity 0.35s ease";
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        el.style.opacity = "1";
+      });
     });
-});
+  }
+
+  function apply() {
+    var el = panel();
+    if (!el) return;
+    if (allowed()) show(el, false);
+    else hide(el);
+  }
+
+  function ask() {
+    if (allowed()) {
+      apply();
+      return;
+    }
+    var value = window.prompt("Введите секретный ключ администратора:");
+    if (value !== SECRET) return;
+    try { localStorage.setItem(KEY, "true"); } catch (e) {}
+    var el = panel();
+    if (el) show(el, true);
+  }
+
+  document.addEventListener("keydown", function (ev) {
+    var target = ev.target;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable)) return;
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || !ev.key || ev.key.length !== 1) return;
+    typed = (typed + ev.key.toLowerCase()).slice(-SECRET.length);
+    if (typed === SECRET) {
+      typed = "";
+      ask();
+    }
+  });
+
+  document.addEventListener("pointerup", function () {
+    var now = Date.now();
+    taps.push(now);
+    taps = taps.filter(function (time) { return now - time <= 600; });
+    if (taps.length >= 3) {
+      taps = [];
+      ask();
+    }
+  });
+
+  apply();
+  if (window.MutationObserver && document.body) {
+    new MutationObserver(apply).observe(document.body, { childList: true, subtree: true });
+  }
+})();
 </script>
 </body>
 </html>
