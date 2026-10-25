@@ -1,0 +1,593 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planet Reboot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap">
+<style>
+:root{--bg:#061018;--surface:#0c1c28;--fg:#e6f2f6;--muted:#8aa3b3;--primary:#2fbf9a;--ink:#04241c;--border:#1a3344;--live:#c44747}
+*{box-sizing:border-box}
+html{background:var(--bg);color:var(--fg)}
+body{margin:0;min-height:100dvh;font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.5}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:active{transform:scale(.96)}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+a{color:inherit}
+header{position:sticky;top:0;z-index:20;background:rgba(6,16,24,.92);border-bottom:1px solid var(--border);backdrop-filter:blur(8px)}
+.bar{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.brand{font-weight:500;letter-spacing:.14em;text-decoration:none;display:flex;align-items:center;gap:8px}
+.logo{width:28px;height:28px;flex:none}
+nav{display:flex;flex-wrap:wrap;gap:6px}
+nav button, .langs button{min-height:44px;background:transparent;border:0;color:var(--muted);padding:0 10px}
+nav button.on, .langs button.on{color:var(--primary)}
+.langs{margin-left:auto;display:flex;gap:4px}
+main{max-width:1100px;margin:0 auto;padding:28px 16px 80px}
+h1{font-weight:500;letter-spacing:.08em;font-size:clamp(2rem,6vw,3.4rem);margin:12px 0}
+h2{font-weight:500;font-size:1.35rem;margin:0}
+.kicker{color:var(--primary);letter-spacing:.16em;text-transform:uppercase;font-size:.75rem;font-weight:500}
+.muted{color:var(--muted)}
+.serif{font-family:"Source Serif 4",Georgia,serif}
+.card{border:1px solid var(--border);background:var(--surface);padding:20px;margin-top:16px}
+.center{text-align:center}
+.row{display:flex;flex-wrap:wrap;gap:10px}
+.grow{flex:1}
+.btn{min-height:48px;padding:0 18px;border:0;background:var(--primary);color:var(--ink);font-weight:500}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
+.btn.live{background:var(--live);color:#fff}
+label{display:block;font-size:.9rem;color:var(--muted);margin-top:12px}
+input,textarea,select{width:100%;margin-top:6px;min-height:48px;background:var(--bg);border:1px solid var(--border);padding:8px 12px}
+textarea{min-height:96px;resize:vertical}
+.cols{display:grid;gap:12px}
+@media(min-width:900px){.cols{grid-template-columns:repeat(3,1fr)}}
+.decision{border:4px solid var(--primary);background:var(--bg);padding:14px;margin-top:14px}
+.meter{height:8px;background:var(--bg);margin-top:8px}
+.meter>span{display:block;height:100%;background:var(--primary);transition:width .7s ease}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#02080c;padding:8px;min-height:220px}
+.tile{background:#0a1822;display:flex;align-items:flex-end;padding:10px;min-height:100px;position:relative}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--primary);display:inline-block;animation:pulse 2.4s ease-in-out infinite}
+.dot.off{background:var(--muted);animation:none}
+@keyframes pulse{50%{opacity:.45}}
+@keyframes rise{from{opacity:0;filter:blur(4px);transform:translateY(12px)}to{opacity:1;filter:none;transform:none}}
+.rise{animation:rise .52s cubic-bezier(.2,0,0,1) both}
+.d2{animation-delay:.09s}.d3{animation-delay:.18s}.d4{animation-delay:.27s}
+.toast{position:fixed;left:16px;right:16px;bottom:16px;z-index:40;max-width:32rem;margin:0 auto;border:2px solid var(--primary);background:var(--surface);padding:16px;animation:rise .42s ease-out}
+.dock{position:fixed;right:16px;bottom:16px;z-index:30;width:min(360px,calc(100% - 32px));border:1px solid var(--border);background:var(--surface);padding:12px}
+.note{font-size:.75rem;color:var(--muted);margin-top:8px}
+video.cam{width:100%;height:140px;background:#02080c;object-fit:cover}
+.lock{width:14px;height:14px;vertical-align:-2px}
+@media(prefers-reduced-motion:reduce){.rise,.toast,.dot,.meter>span{animation:none;transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <a class="brand" href="#home" data-act="goto" data-view="home">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="#2fbf9a" stroke-width="1.5"/><path d="M5 16h22M16 5c3 3.2 4.6 7 4.6 11s-1.6 7.8-4.6 11c-3-3.2-4.6-7.8-4.6-11S13 8.2 16 5z" fill="none" stroke="#2fbf9a" stroke-width="1.2"/></svg>
+      PLANET REBOOT
+    </a>
+    <nav id="nav"></nav>
+    <div class="langs" id="langs"></div>
+  </div>
+</header>
+<main id="app"></main>
+<div id="toast"></div>
+<div id="dock"></div>
+<script>
+const KEY = "planetreboot-html-v1";
+const T = {
+  ru: {
+    home:"Главная", feed:"Лента", groups:"Группы", messages:"Сообщения", profile:"Профиль", admin:"Пульт",
+    kicker:"Глобальный ситуационный центр", tag:"Наблюдение. Анализ. Решение.", man:"Манифест",
+    p:["Этот сайт создан не для развлечений или бессмысленных споров и дискуссий на политические темы, не приводящих ни к каким конкретным результатам. Здесь за каждым конкретным обсуждением следует вывод и принятие решения по возможному устранению последствий. Мы объединились со всех уголков Земли, независимо от конфессий, профессий и взглядов, ради одной святой цели — спасения нашего общего дома. Это Глобальный Ситуационный Центр по решению проблем Разумного Человечества. Мы созданы для немедленного решения этих всех проблем и устранения их последствий.","Здесь мы наблюдаем за пульсом Земли в реальном времени: от движения тектонических плит до изменений в атмосфере, и обсуждаем и анализируем принятие решений и законов государствами или отдельными политиками и президентами, прямо или косвенно влекущие за собой глобальные изменения или трудно обратимые процессы на нашей общей планете. Здесь мы делимся научными фактами, координируем помощь и ищем решения глобальных кризисов как в глобально экологической, так и в политической плоскостях. Мы очень быстро объединяемся и находим оптимальные выходы из глобальных катаклизмов, финансовых катастроф и войн.","Если вы готовы созидать, исследовать и защищать мир, брать на себя ответственность за принятие определенных решений и действовать, когда это необходимо, во имя спасения нашего общего дома, и всё это без агрессии и взаимных обвинений — вы именно там, где ваши светлые мысли и способности жизненно необходимы. Добро пожаловать в Концессию Разума."],
+    enter:"Войти в Концессию Разума", feedCta:"Лента Мониторинга Планеты",
+    local:"Записи остаются в этом браузере. Деньги не уходят, IQ-Coin не выпускается. Звонок — прямой WebRTC между двумя браузерами: код нужно переслать собеседнику. Камера открывается только по HTTPS.",
+    nature:"Климат и Природа", politics:"Политика и Законы", economy:"Экономика и Кризисы",
+    decision:"Принятое решение и план действий по устранению последствий",
+    share:"Закачать видео, документы или фото", hint:"Допустимые форматы: MP4, MOV, PDF, JPG, PNG. Файл никуда не отправляется. Шкала только показывает ход.",
+    title:"Заголовок", body:"Текст", send:"Отправить в ленту", video:"Видео", photo:"Фото", doc:"Документ",
+    support:"Поддержать созидание", confirm:"Подтвердить",
+    gift:"Анонимный Соавтор поддержал проект на ${n}. Всего участников: +1",
+    bank:"Банк Созидания", fundOf:"Фонд Разума", forWork:"на созидание",
+    rate:"Курс IQ-Coin", cap:"Капитализация", myGift:"Мой созидательный вклад",
+    iqWallet:"Мой криптокошелек IQ-Coin", iqNote:"Счёт на этом устройстве. Монета не выпускается и не торгуется.",
+    award:"Ваш индекс осознанности подтвержден! На ваш кошелек начислено +10 IQ-Coin за вклад в Концессию Разума",
+    tip:"Поддержать автора в IQ-Coin", iqSend:"Отправить", iqShort:"На кошельке недостаточно IQ-Coin.",
+    iqSent:"Записано {n} IQ-Coin. Автор эту запись не получает.",
+    qOf:"Вопрос {n} из {t}", next:"Далее", finish:"Завершить",
+    conflict:"Ваши ответы в вопросах №1 и №3 расходятся по логике. Похоже, тема требует более глубокого изучения. Ознакомьтесь с научными материалами в нашей Ленте",
+    newGroup:"Новая группа", gName:"Название", closed:"Закрытая группа", create:"Создать",
+    open:"Открытая", startLive:"Запустить онлайн-дискуссию", joinLive:"Присоединиться к идущей онлайн-дискуссии",
+    onAir:"В эфире: {n} участников", mic:"Микрофон", cam:"Камера", leave:"Выйти из дискуссии",
+    notes:"Текущие выводы и план действий (заполняется модератором в реальном времени)",
+    write:"Написать лично", audio:"Приватный аудиозвонок", videoCall:"Приватный видеозвонок", addThird:"Подключить третьего",
+    endCall:"Завершить звонок", you:"Вы", third:"Третий участник",
+    myCode:"Мой код соединения", pasteCode:"Код собеседника", linkUp:"Соединить", copyCode:"Скопировать код", copied:"Код скопирован",
+    p2p:"Прямой звонок двоих. Третий участник этим файлом не подключается: для троих нужен сервер сигналинга.",
+    linked:"Канал задан. Дождитесь видео.", callFail:"Камера или микрофон не открылись. Нужен HTTPS и разрешение браузера.",
+    name:"Имя", age:"Возраст", place:"Страна и город", profession:"Профессия", years:"Стаж, лет", uni:"Образование",
+    save:"Сохранить профиль", expert:"Заполнено вами. Документы не проверялись.",
+    publish:"Опубликовать в ленту", queue:"Очередь модерации", approve:"Одобрить", reject:"Отклонить",
+    ads:"Эко-реклама", partner:"Партнёр", about:"Что поддерживает", addAd:"Записать интеграцию",
+    adsNote:"Список на этом устройстве. Рекламная сеть не подключена.",
+    goal:"Цель, $", openDrive:"Открыть сбор", drives:"Управление сборами",
+    addQ:"Добавить вопрос", pubSurvey:"Опубликовать опрос", qLabel:"Вопрос", opt:"Вариант",
+    cross:"Этот вопрос проверяет первый", none:"Без перекрёстной проверки",
+    discuss:"Открыть живую дискуссию под материалом", discussLine:"Давайте обсудим эту тему и проведём дискуссию по этому вопросу.",
+    glass:"Переход на стеклянную многоразовую тару", inFund:"открыт в фонде",
+    wind:"Грант на создание прототипа бесшумного ветрогенератора нового поколения",
+    sampleAuthor:"Автор образца", adminName:"Администратор",
+    ai:"Внимание! Любая агрессия, переходы на личности и пустые политические споры блокируются автоматически. Пишите конструктивно, предлагайте выводы."
+  },
+  en: {
+    home:"Home", feed:"Feed", groups:"Groups", messages:"Messages", profile:"Profile", admin:"Console",
+    kicker:"Global situational center", tag:"Observe. Analyze. Decide.", man:"Manifesto",
+    p:["This site was not created for entertainment, or for meaningless arguments and political debates that lead nowhere. Here, every concrete discussion is followed by a conclusion and a decision on how the consequences might be undone. We have joined from every corner of the Earth, regardless of faith, profession, or outlook, for one sacred purpose — saving our common home. This is the Global Situational Center for the problems of rational humanity. We exist to resolve all of these problems at once and to remove their consequences.","Here we watch the pulse of the Earth in real time: from the movement of tectonic plates to changes in the atmosphere. We discuss and analyze decisions and laws made by states, or by individual politicians and presidents, that directly or indirectly bring global change, or processes on our shared planet that are hard to reverse. Here we share scientific facts, coordinate aid, and look for ways through global crises, both ecological and political. We come together very quickly and find the soundest ways out of global catastrophes, financial disasters, and wars.","If you are ready to build, to investigate, and to protect peace; to take responsibility for certain decisions and to act when it is necessary, in the name of saving our common home — and to do all of this without aggression or mutual accusation — then you are exactly where your clear thinking and your abilities are vitally needed. Welcome to the Concession of Reason."],
+    enter:"Enter the Concession of Reason", feedCta:"Planet Monitoring Feed",
+    local:"Records stay in this browser. No money moves, and IQ-Coin is not issued. A call is direct WebRTC between two browsers: send the code to the other person. The camera opens only on HTTPS.",
+    nature:"Climate and Nature", politics:"Politics and Laws", economy:"Economy and Crises",
+    decision:"Decision taken and a plan to undo the consequences",
+    share:"Upload video, documents, or photos", hint:"MP4, MOV, PDF, JPG, PNG. The file is not uploaded. The bar only shows a rehearsal.",
+    title:"Title", body:"Text", send:"Post to the feed", video:"Video", photo:"Photo", doc:"Document",
+    support:"Support the work", confirm:"Confirm",
+    gift:"An anonymous co-author supported the project with ${n}. Participants: +1",
+    bank:"Bank of Creation", fundOf:"Fund of Reason", forWork:"for the work",
+    rate:"IQ-Coin rate", cap:"Capitalization", myGift:"My contribution",
+    iqWallet:"My IQ-Coin wallet", iqNote:"A balance on this device. The coin is not issued and is not traded.",
+    award:"Your awareness index is confirmed. +10 IQ-Coin was added on this device.",
+    tip:"Support the author in IQ-Coin", iqSend:"Send", iqShort:"Not enough IQ-Coin.",
+    iqSent:"{n} IQ-Coin recorded. The author does not receive it.",
+    qOf:"Question {n} of {t}", next:"Next", finish:"Finish",
+    conflict:"Answers 1 and 3 diverge. The topic needs a closer look in the feed.",
+    newGroup:"New group", gName:"Name", closed:"Closed group", create:"Create",
+    open:"Open", startLive:"Start a live discussion", joinLive:"Join the live discussion",
+    onAir:"Live: {n} people", mic:"Microphone", cam:"Camera", leave:"Leave",
+    notes:"Current conclusions and action plan",
+    write:"Write privately", audio:"Private audio call", videoCall:"Private video call", addThird:"Add a third person",
+    endCall:"End call", you:"You", third:"Third person",
+    myCode:"My connection code", pasteCode:"The other person's code", linkUp:"Connect",
+    p2p:"A direct call for two people. This file cannot add a third: that needs a signaling server.",
+    linked:"The channel is set. Wait for video.", callFail:"The camera or microphone did not open. HTTPS and permission are required.", copyCode:"Copy the code", copied:"Code copied",
+    name:"Name", age:"Age", place:"Place", profession:"Profession", years:"Years of practice", uni:"Education",
+    save:"Save profile", expert:"Filled in by you. Documents were not checked.",
+    publish:"Publish", queue:"Moderation queue", approve:"Approve", reject:"Reject",
+    ads:"Eco advertising", partner:"Partner", about:"What it supports", addAd:"Save the slot",
+    adsNote:"A list on this device. No advertising network is connected.",
+    goal:"Goal, $", openDrive:"Open a collection", drives:"Collections",
+    addQ:"Add a question", pubSurvey:"Publish the survey", qLabel:"Question", opt:"Option",
+    cross:"This question checks the first", none:"No cross-check",
+    discuss:"Open a live discussion under the material", discussLine:"Let us discuss this and hold a discussion on the question.",
+    glass:"A shift to reusable glass containers", inFund:"open in the fund",
+    wind:"A grant for a quiet wind-generator prototype",
+    sampleAuthor:"Sample author", adminName:"Administrator",
+    ai:"Aggression, personal attacks, and empty political fights are blocked. Write a conclusion."
+  },
+  zh: {
+    home:"首页", feed:"动态", groups:"小组", messages:"消息", profile:"资料", admin:"控制台",
+    kicker:"全球态势中心", tag:"观察。分析。决定。", man:"宣言",
+    p:["本网站的建立，不是为了娱乐，也不是为了那些得不出任何具体结果的无谓争论和政治讨论。在这里，每一次具体讨论之后，都要得出结论，并就如何消除后果作出决定。我们来自地球的各个角落，不论信仰、职业与见解，为了一个神圣的目标联合在一起——拯救我们共同的家园。这里是应对理性人类诸般问题的全球态势中心。我们的使命，是立即解决这些问题，并消除它们的后果。","在这里，我们实时观察地球的脉搏：从板块运动到大气变化；我们讨论并分析国家，或个别政治人物与总统所作出的决策和法律——它们直接或间接地在我们共同的星球上引发全球性变化，或难以逆转的过程。在这里，我们分享科学事实，协调援助，并在全球生态与政治两个层面上寻找全球危机的解决办法。我们迅速联合起来，为全球性灾变、金融灾难和战争找到最优的出路。","如果您准备好去创造、去探究、去保卫和平，愿意为某些决定承担责任，并在必要时付诸行动，以拯救我们共同的家园，而且这一切都不带敌意、也不相互指责——那么，这里正是您清明的思想与能力所迫切需要的地方。欢迎加入理性特许会。"],
+    enter:"进入理性特许会", feedCta:"行星监测动态",
+    local:"记录只留在此浏览器。没有付款，IQ-Coin 未发行。通话是两个浏览器之间的 WebRTC：请把连接码发给对方。摄像头只在 HTTPS 下打开。",
+    nature:"气候与自然", politics:"政治与法律", economy:"经济与危机",
+    decision:"已作决定与消除后果的计划",
+    share:"上传视频、文件或照片", hint:"MP4、MOV、PDF、JPG、PNG。文件不会上传。进度条只是演练。",
+    title:"标题", body:"正文", send:"发到动态", video:"视频", photo:"照片", doc:"文件",
+    support:"支持这项建设", confirm:"确认",
+    gift:"一位匿名共建者支持了 ${n}。参与者：+1",
+    bank:"创造之库", fundOf:"理性基金", forWork:"用于建设",
+    rate:"IQ-Coin 汇率", cap:"总市值", myGift:"我的贡献",
+    iqWallet:"我的 IQ-Coin 钱包", iqNote:"此设备上的余额。货币未发行，也不交易。",
+    award:"清醒指数已确认。此设备记入 +10 IQ-Coin。",
+    tip:"用 IQ-Coin 支持作者", iqSend:"送出", iqShort:"IQ-Coin 不够。",
+    iqSent:"已记下 {n} IQ-Coin。作者不会收到。",
+    qOf:"问题 {n} / {t}", next:"下一题", finish:"完成",
+    conflict:"第 1 题和第 3 题的回答相互矛盾。这个主题需要再看动态中的材料。",
+    newGroup:"新小组", gName:"名称", closed:"封闭小组", create:"创建",
+    open:"开放", startLive:"开始在线讨论", joinLive:"加入正在进行的讨论",
+    onAir:"直播中：{n} 人", mic:"麦克风", cam:"摄像头", leave:"离开",
+    notes:"当前结论与行动计划",
+    write:"私信", audio:"私人语音", videoCall:"私人视频", addThird:"加入第三人",
+    endCall:"结束通话", you:"你", third:"第三人",
+    myCode:"我的连接码", pasteCode:"对方的连接码", linkUp:"连接", copyCode:"复制连接码", copied:"已复制",
+    p2p:"这是两人的直接通话。此文件不能接入第三人，那需要信令服务器。",
+    linked:"通道已设置。请等待画面。", callFail:"摄像头或麦克风没有打开。需要 HTTPS 和浏览器权限。",
+    name:"姓名", age:"年龄", place:"国家与城市", profession:"职业", years:"从业年数", uni:"教育",
+    save:"保存资料", expert:"由你填写。文件未经核验。",
+    publish:"发布", queue:"审核队列", approve:"通过", reject:"拒绝",
+    ads:"生态合作", partner:"合作方", about:"支持什么", addAd:"记下",
+    adsNote:"只是此设备上的列表。没有接入广告网络。",
+    goal:"目标，$", openDrive:"开启筹集", drives:"筹集管理",
+    addQ:"添加问题", pubSurvey:"发布问卷", qLabel:"问题", opt:"选项",
+    cross:"此题核验第一题", none:"不交叉核验",
+    discuss:"在材料下开启讨论", discussLine:"让我们讨论这个题目。",
+    glass:"转向可重复使用的玻璃容器", inFund:"已在基金中",
+    wind:"静音风力发电机原型资助",
+    sampleAuthor:"示例作者", adminName:"管理员",
+    ai:"攻击、人身指责和空洞争论会被拦住。请写出结论。"
+  }
+};
+const SPHERES = ["nature","politics","economy"];
+function seed(){
+  return {
+    locale:"ru", view:"home", iq:150, awarded:false, personal:0, treesNote:0,
+    profile:{name:"",age:"",place:"",profession:"",years:"",uni:""},
+    posts:[
+      {id:"n1",sphere:"nature",title:"Сдвиг атмосферы над промышленным бассейном",body:"Образец карточки, не живой датчик. За срок наблюдения тепличный след растёт, а слабые толчки совпадают со старой зоной добычи.",decision:"Сверить три независимых ряда и опубликовать метод, а не имя виновного.",author:"sample"},
+      {id:"p1",sphere:"politics",title:"Новое правило о срочных полномочиях",body:"Образец разбора. Текст правила шире заявленной цели и не говорит, когда полномочия заканчиваются.",decision:"Потребовать срок окончания и открытый отчёт, без перехода на личности.",author:"sample"},
+      {id:"e1",sphere:"economy",title:"Разрыв в расчётах за энергию",body:"Образец. Счета расходятся с объёмом поставки, и разрыв уже влияет на соседние договоры.",decision:"Сверить единицы измерения и остановить цепочку, пока цифры не сойдутся.",author:"sample"}
+    ],
+    pending:[
+      {id:"q1",title:"Ряд измерений у побережья",body:"Пользователь прислал ряд. В очереди, пока администратор не решит."},
+      {id:"q2",title:"Разбор нового правила",body:"Короткий разбор без оскорблений. Ждёт решения."}
+    ],
+    drives:[{id:"wind",title:"",goal:100,raised:40,backers:12,ledger:[]}],
+    ads:[],
+    groups:[{id:"g1",name:"Сейсмологи",closed:true,live:false,note:"",members:["Ирина Коваль"]}],
+    threads:[{id:"irina",with:"Ирина Коваль",messages:[{from:"them",text:"Могу сверить ряд за март."}]}],
+    call:null, liveId:null, groupId:"g1", threadId:"irina",
+    surveys:[{
+      id:"s1", title:"Оценка климатических заявлений",
+      qs:[
+        {text:"Стоит ли политикам делать такие заявления?", opts:["Да","Нет"], cross:false},
+        {text:"Что весомее в таком заявлении?", opts:["Измерения","Лозунг"], cross:false},
+        {text:"Стоит ли делать подобные высказывания?", opts:["Да","Нет"], cross:true},
+        {text:"Можно ли действовать без взаимных обвинений?", opts:["Да","Нет"], cross:false}
+      ],
+      step:0, answers:[], done:false, conflict:false
+    }],
+    draftQ:[],
+    toast:"", tipFor:""
+  };
+}
+let db = load();
+function load(){
+  try{ const raw = localStorage.getItem(KEY); if(raw){ const data = JSON.parse(raw); data.call = null; return data; } }catch(e){}
+  return seed();
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
+function t(k){ return T[db.locale][k]; }
+function esc(s){ return String(s??"").replace(/[&<>"']/g, c => "&#"+c.charCodeAt(0)+";"); }
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function money(n){ return "$"+Number(n).toLocaleString("en-US"); }
+function deeds(){ return db.personal + (db.awarded?10:0); }
+function rate(){ return (1.25 + deeds()*0.01); }
+function cap(){ return Math.round(1000000*rate()); }
+function toast(text){ db.toast = text; save(); render(); setTimeout(()=>{ if(db.toast===text){ db.toast=""; save(); const el=document.getElementById("toast"); if(el) el.innerHTML=""; } }, 5200); }
+function authorName(post){ return post.author==="admin"?t("adminName"):post.author==="sample"?t("sampleAuthor"):(post.author||t("sampleAuthor")); }
+
+function lock(closed){
+  return closed ? '<svg class="lock" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 10V8a5 5 0 0 1 10 0v2h1v11H6V10h1zm2 0h6V8a3 3 0 0 0-6 0v2z"/></svg>' : "";
+}
+function nav(){
+  document.getElementById("nav").innerHTML = ["home","feed","groups","messages","profile","admin"].map(v =>
+    '<button type="button" data-act="goto" data-view="'+v+'" class="'+(db.view===v?"on":"")+'">'+t(v)+"</button>"
+  ).join("");
+  document.getElementById("langs").innerHTML = ["ru","en","zh"].map(code =>
+    '<button type="button" data-act="lang" data-code="'+code+'" class="'+(db.locale===code?"on":"")+'">'+(code==="zh"?"中文":code.toUpperCase())+"</button>"
+  ).join("");
+  document.documentElement.lang = db.locale==="zh"?"zh":db.locale;
+}
+function tipBox(name){
+  return '<div><button class="btn ghost" type="button" data-act="tip-open" data-name="'+esc(name)+'">'+t("tip")+'</button>'
+    +(db.tipFor===name ? '<div class="card"><div class="row">'+[1,5,10].map(n=>'<button class="btn ghost" type="button" data-act="tip" data-n="'+n+'" data-name="'+esc(name)+'">'+n+'</button>').join("")+'</div><p class="note">'+t("iqWallet")+': '+db.iq+' IQ-Coin</p></div>' : "")
+    +"</div>";
+}
+function postCard(post){
+  return '<article class="card"><p class="kicker">'+t(post.sphere)+'</p><h2>'+esc(post.title)+'</h2><p class="serif">'+esc(post.body)+'</p>'
+    +(post.file?'<p class="note">'+esc(post.file)+'</p>':"")
+    +(post.discuss?'<p class="note">'+t("discussLine")+'</p><button class="btn ghost" type="button" data-act="live-topic">'+t("joinLive")+"</button>":"")
+    +'<section class="decision"><h3 class="kicker">'+t("decision")+'</h3><p class="serif">'+esc(post.decision||"—")+'</p></section>'
+    +tipBox(authorName(post))+'</article>';
+}
+function bank(){
+  const left = Math.max(0, db.drives[0].goal-db.drives[0].raised);
+  const pct = Math.min(100, Math.round(db.drives[0].raised/db.drives[0].goal*100));
+  const wind = db.drives[0];
+  return '<section class="card" style="border-width:2px;border-color:var(--primary)">'
+    +'<p class="kicker">'+t("fundOf")+'</p><h2>'+t("bank")+'</h2>'
+    +'<p style="font-size:clamp(1.8rem,5vw,3rem);color:var(--primary);margin:12px 0 0">'+money(1245800+db.personal)+'</p>'
+    +'<p class="serif">'+t("forWork")+'</p>'
+    +'<div class="row"><div><p class="kicker">'+t("rate")+'</p><p>$'+rate().toFixed(2)+'</p></div><div><p class="kicker">'+t("cap")+'</p><p>'+money(cap())+'</p></div></div>'
+    +'<p class="note">'+t("local")+'</p>'
+    +'<p><strong>'+t("glass")+'</strong> · '+t("inFund")+'</p>'
+    +db.drives.map(d=>'<p><strong>'+esc(d.title||t("wind"))+'</strong> · '+Math.min(100, Math.round(d.raised/d.goal*100))+'%</p>').join("")
+    +'<p class="note">'+t("myGift")+': $'+db.personal+'. '+(db.personal>=5? t("iqNote"):"")+'</p>'
+    +'</section>'
+    +'<article class="card"><h2>'+esc(wind.title||t("wind"))+'</h2>'
+    +'<p>'+"$"+wind.raised+" / \( "+wind.goal+" · "+" \)"+left+'</p>'
+    +'<div class="meter" role="meter" aria-valuenow="'+pct+'"><span style="width:'+pct+'%"></span></div>'
+    +'<div class="row" style="margin-top:12px"><button class="btn" type="button" data-act="fund-open">'+t("support")+'</button></div>'
+    +(db.fundOpen?'<div class="row">'+[1,5,10].map(n=>'<button class="btn ghost" type="button" data-act="fund" data-n="'+n+'">$'+n+'</button>').join("")+'</div>':"")
+    +wind.ledger.map(n=>'<p class="serif">'+esc(t("gift").replace("${n}", n))+'</p>').join("")
+    +'<p class="note">'+t("local")+'</p></article>';
+}
+function surveyBlock(){
+  const s = db.surveys[0];
+  if(!s) return "";
+  if(s.done){
+    return '<article class="card"><h2>'+esc(s.title)+'</h2>'+(s.conflict?'<p class="serif">'+t("conflict")+'</p>':"<p class=\"note\">OK</p>")+'</article>';
+  }
+  const q = s.qs[s.step];
+  return '<article class="card"><p class="kicker">'+esc(s.title)+'</p><h2>'+t("qOf").replace("{n}", s.step+1).replace("{t}", s.qs.length)+'</h2><p>'+esc(q.text)+'</p>'
+    +q.opts.map((opt,i)=>'<button class="btn ghost" style="margin:8px 8px 0 0" type="button" data-act="pick" data-i="'+i+'">'+esc(opt)+'</button>').join("")
+    +'<div><button class="btn" type="button" data-act="step" '+(s.picked==null?"disabled":"")+'>'+(s.step===s.qs.length-1?t("finish"):t("next"))+'</button></div></article>';
+}
+function home(){
+  return '<section class="center rise"><p class="kicker">'+t("kicker")+'</p><h1>PLANET REBOOT</h1><p class="muted">'+t("tag")+'</p></section>'
+    +'<article class="card rise d3"><p class="kicker center">'+t("man")+'</p>'
+    +t("p").map(p=>'<p class="serif center">'+esc(p)+'</p>').join("")+'</article>'
+    +'<div class="row rise d4" style="justify-content:center;margin-top:16px">'
+    +'<button class="btn" type="button" data-act="goto" data-view="profile">'+t("enter")+'</button>'
+    +'<button class="btn ghost" type="button" data-act="goto" data-view="feed">'+t("feedCta")+'</button></div>'
+    +'<p class="note center">'+t("local")+'</p>';
+}
+function feed(){
+  const upload = '<form class="card" id="up"><h2>'+t("share")+'</h2>'
+    +'<label>'+t("title")+'<input name="title" required></label>'
+    +'<label>'+t("body")+'<textarea name="body" required></textarea></label>'
+    +'<label>'+t("nature")+'<select name="sphere">'+SPHERES.map(s=>'<option value="'+s+'">'+t(s)+'</option>').join("")+'</select></label>'
+    +'<div class="row"><button class="btn ghost" type="button" data-act="kind" data-kind="video">'+t("video")+'</button>'
+    +'<button class="btn ghost" type="button" data-act="kind" data-kind="photo">'+t("photo")+'</button>'
+    +'<button class="btn ghost" type="button" data-act="kind" data-kind="doc">'+t("doc")+'</button></div>'
+    +'<p class="note" id="kind">'+(db.kind||"")+' '+(db.fileName||"")+'</p>'
+    +'<input id="file" type="file" accept=".mp4,.mov,.pdf,.jpg,.jpeg,.png,video/*,image/*,application/pdf">'
+    +'<p class="note">'+t("hint")+'</p><div class="meter"><span id="bar" style="width:0"></span></div>'
+    +'<button class="btn" type="submit">'+t("send")+'</button></form>';
+  const cols = '<div class="cols">'+SPHERES.map(s => '<section><h2>'+t(s)+'</h2>'
+    +db.posts.filter(p=>p.sphere===s).map(postCard).join("")+'</section>').join("")+'</div>';
+  return bank()+surveyBlock()+upload+cols+'<p class="note">'+t("ai")+'</p>';
+}
+function groups(){
+  const g = db.groups.find(x=>x.id===db.groupId) || db.groups[0];
+  const list = db.groups.map(item => '<button class="btn ghost" type="button" data-act="group" data-id="'+item.id+'">'+lock(item.closed)+' '+esc(item.name)+' · '+(item.closed?t("closed"):t("open"))+'</button>').join(" ");
+  const room = db.liveId===g.id ? '<p class="note">'+t("p2p")+'</p><div class="row"><button class="btn ghost" type="button" data-act="leave">'+t("leave")+'</button></div><label>'+t("notes")+'<textarea data-act="note">'+esc(g.note)+'</textarea></label>' : "";
+  return '<form class="card" id="gf"><h2>'+t("newGroup")+'</h2><label>'+t("gName")+'<input name="name" required></label>'
+    +'<label><input type="checkbox" name="closed" style="width:auto"> '+t("closed")+'</label>'
+    +'<button class="btn" type="submit">'+t("create")+'</button></form>'
+    +'<div class="card"><div class="row">'+list+'</div><h2 style="margin-top:16px">'+lock(g.closed)+' '+esc(g.name)+'</h2>'
+    +'<p class="muted">'+g.members.map(esc).join(", ")+'</p>'
+    +'<button class="btn '+(g.live?"live":"")+'" type="button" data-act="golive">'+(g.live?t("joinLive"):t("startLive"))+'</button>'
+    +'<button class="btn ghost" type="button" data-act="write" data-name="'+esc(g.members[0]||"Ирина Коваль")+'">'+t("write")+'</button>'
+    +room+'</div>';
+}
+function messages(){
+  const th = db.threads.find(x=>x.id===db.threadId) || db.threads[0];
+  const list = db.threads.map(item=>'<button class="btn ghost" type="button" data-act="thread" data-id="'+item.id+'">'+esc(item.with)+'</button>').join(" ");
+  const log = th.messages.map(m=>'<p><strong>'+(m.from==="me"?t("you"):esc(th.with))+'</strong> '+esc(m.text)+'</p>').join("");
+  return '<div class="card"><div class="row">'+list+'</div><h2>'+esc(th.with)+'</h2>'+log
+    +'<form id="mf" class="row"><input name="text" required style="flex:1"><button class="btn" type="submit">'+t("iqSend")+'</button></form>'
+    +'<div class="row"><button class="btn ghost" type="button" data-act="call" data-mode="audio">'+t("audio")+'</button>'
+    +'<button class="btn ghost" type="button" data-act="call" data-mode="video">'+t("videoCall")+'</button></div></div>';
+}
+function sdpPanel(){
+  const c = db.call;
+  if(!c) return "";
+  return '<video id="local-video" class="cam" autoplay muted playsinline></video><video id="remote-video" class="cam" autoplay playsinline></video>'
+    +'<label>'+t("myCode")+'<textarea id="sdp-out" readonly>'+esc(c.sdp||"")+'</textarea></label>'
+    +'<label>'+t("pasteCode")+'<textarea id="sdp-in"></textarea></label>'
+    +'<button class="btn" type="button" data-act="copy-sdp">'+t("copyCode")+'</button> '
+    +'<button class="btn" type="button" data-act="join-sdp">'+t("linkUp")+'</button>'
+    +'<p class="note">'+t("p2p")+'</p>';
+}
+function dock(){
+  const c = db.call;
+  const el = document.getElementById("dock");
+  if(!c){ el.innerHTML=""; return; }
+  el.innerHTML = '<div class="dock"><p class="kicker">'+(c.mode==="video"?t("videoCall"):t("audio"))+' · '+esc(c.with||"")+'</p>'
+    +sdpPanel()
+    +'<div class="row"><button class="btn ghost" type="button" data-act="cmic">'+t("mic")+'</button>'
+    +(c.mode==="video"?'<button class="btn ghost" type="button" data-act="ccam">'+t("cam")+'</button>':"")
+    +'<button class="btn ghost" type="button" data-act="hang">'+t("endCall")+'</button></div>'
+    +'<p class="note">'+(c.state==="linked"?t("linked"):t("local"))+'</p></div>';
+  bindMedia();
+}
+function profile(){
+  const p = db.profile;
+  const expert = p.profession && p.years && p.uni;
+  const field = (k, name, type) => '<label>'+t(k)+'<input name="'+name+'" '+(type||"")+' value="'+esc(p[name])+'"></label>';
+  return '<p class="kicker">'+t("profile")+'</p><h1>'+esc(p.name||"Planet Reboot")+'</h1>'
+    +(expert?'<p style="color:var(--primary)">● '+t("expert")+'</p>':"")
+    +'<section class="card"><h2>'+t("iqWallet")+'</h2><p style="font-size:2rem;color:var(--primary)">'+db.iq+' IQ-Coin</p><p class="note">'+t("iqNote")+'</p></section>'
+    +'<form class="card" id="pf">'+field("name","name")+field("age","age",'inputmode="numeric"')+field("place","place")+field("profession","profession")+field("years","years",'inputmode="numeric"')+field("uni","uni")
+    +'<button class="btn" type="submit">'+t("save")+'</button></form>';
+}
+function admin(){
+  return '<h1>'+t("admin")+'</h1><p class="note">'+t("local")+'</p>'
+    +'<form class="card" id="af"><h2>'+t("publish")+'</h2><label>'+t("title")+'<input name="title" required></label><label>'+t("body")+'<textarea name="body" required></textarea></label>'
+    +'<label><select name="sphere">'+SPHERES.map(s=>'<option value="'+s+'">'+t(s)+'</option>').join("")+'</select></label>'
+    +'<label><input type="checkbox" name="discuss" style="width:auto"> '+t("discuss")+'</label>'
+    +'<button class="btn" type="submit">'+t("publish")+'</button></form>'
+    +'<section class="card"><h2>'+t("queue")+'</h2>'+db.pending.map(item=>'<article><h3>'+esc(item.title)+'</h3><p>'+esc(item.body)+'</p><button class="btn" type="button" data-act="approve" data-id="'+item.id+'">'+t("approve")+'</button> <button class="btn ghost" type="button" data-act="reject" data-id="'+item.id+'">'+t("reject")+'</button></article>').join("")+'</section>'
+    +'<form class="card" id="adform"><h2>'+t("ads")+'</h2><p class="note">'+t("adsNote")+'</p><label>'+t("partner")+'<input name="partner" required></label><label>'+t("about")+'<input name="about"></label><button class="btn" type="submit">'+t("addAd")+'</button>'
+    +db.ads.map(a=>'<p>'+esc(a.partner)+' · '+esc(a.about)+'</p>').join("")+'</form>'
+    +'<form class="card" id="df"><h2>'+t("drives")+'</h2><label>'+t("title")+'<input name="title" required></label><label>'+t("goal")+'<input name="goal" inputmode="numeric" value="100"></label><button class="btn" type="submit">'+t("openDrive")+'</button></form>'
+    +'<form class="card" id="sf"><h2>'+t("pubSurvey")+'</h2><label>'+t("title")+'<input name="title" required></label><label>'+t("qLabel")+'<input name="q" required></label><label>'+t("opt")+' 1<input name="a" required></label><label>'+t("opt")+' 2<input name="b" required></label>'
+    +'<label><input type="checkbox" name="cross" style="width:auto"> '+t("cross")+'</label>'
+    +'<button class="btn ghost" type="submit">'+t("addQ")+'</button> <button class="btn" type="button" data-act="pubq">'+t("pubSurvey")+'</button>'
+    +'<p class="note">'+db.draftQ.length+'</p></form>';
+}
+function render(){
+  nav();
+  const view = {home, feed, groups, messages, profile, admin}[db.view] || home;
+  document.getElementById("app").innerHTML = view();
+  document.getElementById("toast").innerHTML = db.toast ? '<p class="toast" role="status">'+esc(db.toast)+'</p>' : "";
+  dock();
+  const up = document.getElementById("up");
+  if(up) up.onsubmit = ev => { ev.preventDefault(); const fd=new FormData(up); startBar(()=>{
+    db.posts.unshift({id:uid(), sphere:fd.get("sphere"), title:fd.get("title"), body:fd.get("body"), decision:t("decision"), author:db.profile.name||t("you"), file:db.fileName||db.kind||""});
+    db.fileName=""; db.kind=""; save(); render();
+  }); };
+  const file = document.getElementById("file");
+  if(file) file.onchange = () => { const f=file.files&&file.files[0]; db.fileName = f?f.name:""; const k=document.getElementById("kind"); if(k) k.textContent=(db.kind||"")+" "+db.fileName; };
+  const gf = document.getElementById("gf");
+  if(gf) gf.onsubmit = ev => { ev.preventDefault(); const fd=new FormData(gf); const id=uid(); db.groups.unshift({id, name:fd.get("name"), closed:!!fd.get("closed"), live:false, note:"", members:[db.profile.name||t("you")]}); db.groupId=id; save(); render(); };
+  const mf = document.getElementById("mf");
+  if(mf) mf.onsubmit = ev => { ev.preventDefault(); const text=new FormData(mf).get("text").trim(); if(!text) return; const th=db.threads.find(x=>x.id===db.threadId); th.messages.push({from:"me", text}); save(); render(); };
+  const pf = document.getElementById("pf");
+  if(pf) pf.onsubmit = ev => { ev.preventDefault(); const fd=new FormData(pf); ["name","age","place","profession","years","uni"].forEach(k=>db.profile[k]=String(fd.get(k)||"").slice(0,80)); save(); render(); };
+  const af = document.getElementById("af");
+  if(af) af.onsubmit = ev => { ev.preventDefault(); const fd=new FormData(af); db.posts.unshift({id:uid(), sphere:fd.get("sphere"), title:fd.get("title"), body:fd.get("body"), decision:t("decision"), author:"admin", discuss:!!fd.get("discuss")}); save(); db.view="feed"; render(); };
+  const ad = document.getElementById("adform");
+  if(ad) ad.onsubmit = ev => { ev.preventDefault(); const fd=new FormData(ad); db.ads.unshift({partner:fd.get("partner"), about:fd.get("about")||""}); save(); render(); };
+  const df = document.getElementById("df");
+  if(df) df.onsubmit = ev => { ev.preventDefault(); const fd=new FormData(df); const goal=Math.max(1, parseInt(fd.get("goal"),10)||100); db.drives.unshift({id:uid(), title:fd.get("title"), goal, raised:0, backers:0, ledger:[]}); save(); render(); };
+  const sf = document.getElementById("sf");
+  if(sf) sf.onsubmit = ev => { ev.preventDefault(); const fd=new FormData(sf); db.draftTitle=fd.get("title")||db.draftTitle||""; db.draftQ.push({text:fd.get("q"), opts:[fd.get("a"), fd.get("b")], cross:!!fd.get("cross")}); const keep=db.draftTitle; sf.reset(); const title=sf.querySelector("[name=title]"); if(title) title.value=keep; save(); render(); };
+  const note = document.querySelector("[data-act=note]");
+  if(note) note.onchange = () => { const g=db.groups.find(x=>x.id===db.liveId); if(g){ g.note=note.value.slice(0,500); save(); } };
+}
+function startBar(done){
+  let p=0; const timer=setInterval(()=>{ p+=10; const bar=document.getElementById("bar"); if(bar) bar.style.width=Math.min(p,100)+"%"; if(p>=100){ clearInterval(timer); done(); } }, 80);
+}
+document.body.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-act]");
+  if(!b) return;
+  if(b.tagName==="A") ev.preventDefault();
+  const act = b.dataset.act;
+  if(act==="goto"){ db.view=b.dataset.view; save(); render(); }
+  else if(act==="lang"){ db.locale=b.dataset.code; save(); render(); }
+  else if(act==="kind"){ db.kind=b.dataset.kind; const k=document.getElementById("kind"); if(k) k.textContent=db.kind+" "+(db.fileName||""); }
+  else if(act==="fund-open"){ db.fundOpen=!db.fundOpen; render(); }
+  else if(act==="fund"){
+    const n=+b.dataset.n; const d=db.drives[0]; d.raised+=n; d.backers+=1; d.ledger.unshift(n); db.personal+=n; db.fundOpen=false; save(); render();
+  }
+  else if(act==="pick"){ db.surveys[0].picked=+b.dataset.i; render(); }
+  else if(act==="step"){
+    const s=db.surveys[0]; if(s.picked==null) return; s.answers[s.step]=s.picked; s.picked=null;
+    if(s.step<s.qs.length-1){ s.step++; save(); render(); return; }
+    s.done=true;
+    const a=s.answers[0], c=s.qs[2]&&s.qs[2].cross?s.answers[2]:a;
+    s.conflict = s.qs[2] && s.qs[2].cross && a!==c;
+    if(!s.conflict && !db.awarded){ db.awarded=true; db.iq+=10; toast(t("award")); }
+    else { save(); render(); }
+  }
+  else if(act==="tip-open"){ db.tipFor = db.tipFor===b.dataset.name ? "" : b.dataset.name; render(); }
+  else if(act==="tip"){
+    const n=+b.dataset.n; if(db.iq<n){ toast(t("iqShort")); return; }
+    db.iq-=n; db.tipFor=""; toast(t("iqSent").replace("{n}", n));
+  }
+  else if(act==="group"){ db.groupId=b.dataset.id; save(); render(); }
+  else if(act==="golive"){ const g=db.groups.find(x=>x.id===db.groupId); if(!g) return; g.live=true; db.liveId=g.id; save(); startP2P("video", g.name); }
+  else if(act==="leave"){ hangP2P(); db.call=null; db.liveId=null; save(); render(); }
+  else if(act==="live-topic"){ db.view="groups"; db.liveId=db.groupId; const g=db.groups.find(x=>x.id===db.groupId); if(g) g.live=true; save(); render(); }
+  else if(act==="write"){
+    const name=b.dataset.name; let th=db.threads.find(x=>x.with===name);
+    if(!th){ th={id:uid(), with:name, messages:[]}; db.threads.unshift(th); }
+    db.threadId=th.id; db.view="messages"; save(); render();
+  }
+  else if(act==="thread"){ db.threadId=b.dataset.id; save(); render(); }
+  else if(act==="call"){ const th=db.threads.find(x=>x.id===db.threadId); startP2P(b.dataset.mode, th?th.with:""); }
+  else if(act==="cmic"){ if(db.call){ db.call.mic=!db.call.mic; setKind("audio", db.call.mic); } render(); }
+  else if(act==="ccam"){ if(db.call){ db.call.cam=!db.call.cam; setKind("video", db.call.cam); } render(); }
+  else if(act==="copy-sdp"){ copySdp(); }
+  else if(act==="join-sdp"){ joinP2P(); }
+  else if(act==="hang"){ hangP2P(); db.call=null; save(); render(); }
+  else if(act==="approve"){ const item=db.pending.find(x=>x.id===b.dataset.id); db.pending=db.pending.filter(x=>x.id!==b.dataset.id); if(item) db.posts.unshift({id:uid(), sphere:"nature", title:item.title, body:item.body, decision:t("decision"), author:"member"}); save(); render(); }
+  else if(act==="reject"){ db.pending=db.pending.filter(x=>x.id!==b.dataset.id); save(); render(); }
+  else if(act==="pubq"){
+    if(db.draftQ.length<1) return;
+    db.surveys.unshift({id:uid(), title:db.draftTitle||"Survey", qs:db.draftQ.slice(0,15), step:0, answers:[], done:false, conflict:false});
+    db.draftQ=[]; db.draftTitle=""; db.view="feed"; save(); render();
+  }
+});
+render();
+let pc = null, localStream = null, remoteStream = null;
+function waitIce(conn){
+  if(conn.iceGatheringState==="complete") return Promise.resolve();
+  return new Promise(resolve => {
+    function done(){ if(conn.iceGatheringState==="complete"){ conn.removeEventListener("icegatheringstatechange", done); resolve(); } }
+    conn.addEventListener("icegatheringstatechange", done);
+  });
+}
+function makePc(){
+  const conn = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+  remoteStream = new MediaStream();
+  conn.ontrack = ev => {
+    ev.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
+    const video = document.getElementById("remote-video");
+    if(video) video.srcObject = remoteStream;
+  };
+  conn.onconnectionstatechange = () => {
+    if(db.call && (conn.connectionState==="connected" || conn.connectionState==="connecting")) db.call.state = "linked";
+  };
+  return conn;
+}
+function bindMedia(){
+  const local = document.getElementById("local-video");
+  const remote = document.getElementById("remote-video");
+  if(local && localStream) local.srcObject = localStream;
+  if(remote && remoteStream) remote.srcObject = remoteStream;
+}
+function setKind(kind, on){
+  if(!localStream) return;
+  localStream.getTracks().filter(track => track.kind===kind).forEach(track => { track.enabled = on; });
+}
+function hangP2P(){
+  if(pc){ pc.close(); pc = null; }
+  if(localStream){ localStream.getTracks().forEach(track => track.stop()); localStream = null; }
+  remoteStream = null;
+}
+async function startP2P(mode, who){
+  try{
+    hangP2P();
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: mode==="video" });
+    pc = makePc();
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await waitIce(pc);
+    db.call = { with: who, mode: mode, mic: true, cam: mode==="video", role: "offer", state: "offer", sdp: JSON.stringify(pc.localDescription) };
+    save(); render();
+  }catch(err){ hangP2P(); db.call = null; toast(t("callFail")); }
+}
+function copySdp(){
+  const box = document.getElementById("sdp-out");
+  const text = box ? box.value : "";
+  if(!text){ toast(t("callFail")); return; }
+  function mark(){ toast(t("copied")); }
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(mark).catch(function(){ selectSdp(box); mark(); });
+    return;
+  }
+  selectSdp(box);
+  mark();
+}
+function selectSdp(box){
+  box.removeAttribute("readonly");
+  box.focus();
+  box.select();
+  try{ document.execCommand("copy"); }catch(e){}
+  box.setAttribute("readonly", "");
+}
+async function joinP2P(){
+  const box = document.getElementById("sdp-in");
+  let desc;
+  try{ desc = JSON.parse((box && box.value) || ""); }
+  catch(e){ toast(t("callFail")); return; }
+  if(!desc || !desc.type || !desc.sdp){ toast(t("callFail")); return; }
+  try{
+    if(!pc){
+      const mode = desc.sdp.indexOf("m=video")>=0 ? "video" : "audio";
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: mode==="video" });
+      pc = makePc();
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+      await pc.setRemoteDescription(desc);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await waitIce(pc);
+      db.call = { with: (db.call && db.call.with) || "", mode: mode, mic: true, cam: mode==="video", role: "answer", state: "answer", sdp: JSON.stringify(pc.localDescription) };
+      save(); render();
+      return;
+    }
+    await pc.setRemoteDescription(desc);
+    if(db.call) db.call.state = "linked";
+    save(); render();
+  }catch(err){ toast(t("callFail")); }
+}
+</script>
+</body>
+</html>
