@@ -588,6 +588,58 @@ async function joinP2P(){
     save(); render();
   }catch(err){ toast(t("callFail")); }
 }
+<script>
+// 1. Принудительный безопасный протокол HTTPS
+if (window.location.protocol === 'http:' && !window.location.host.includes('localhost')) {
+    window.location.protocol = 'https:';
+}
 
+// 2. Универсальный замок (Клик по логотипу + Ввод на клавиатуре)
+document.addEventListener("DOMContentLoaded", function() {
+    var adminPanel = document.getElementById('admin-panel');
+    
+    // Проверяем статус доступа при загрузке страницы
+    if (localStorage.getItem('site_owner_access') === 'true') {
+        if (adminPanel) adminPanel.style.display = 'block';
+    } else {
+        if (adminPanel) adminPanel.style.display = 'none';
+    }
+
+    // Функция активации админки при успешном вводе пароля
+    function checkAndOpenAccess() {
+        var passwordCheck = prompt("Введите секретный ключ администратора:");
+        if (passwordCheck === 'putsa') {
+            localStorage.setItem('site_owner_access', 'true');
+            if (adminPanel) adminPanel.style.display = 'block';
+            alert("Доступ для Хозяина успешно активирован!");
+        } else if (passwordCheck !== null) {
+            alert("Неверный ключ доступа.");
+        }
+    }
+
+    // ВАРИАНТ 1: Для телефонов и планшетов (Клик на надпись PLANET REBOOT)
+    // Код ищет тег header или класс logo, если не находит - привязывается к первому элементу
+    var logoElement = document.querySelector('header, .logo, h1, div') || document.body;
+    if (logoElement) {
+        logoElement.style.cursor = 'pointer'; // Делает подсказку в виде руки на компьютере
+        logoElement.addEventListener('click', function() {
+            checkAndOpenAccess();
+        });
+    }
+
+    // ВАРИАНТ 2: Для компьютеров и ноутбуков (Слепой ввод слова putsa)
+    var targetWord = 'putsa';
+    var keyBuffer = '';
+    document.addEventListener('keydown', function(e) {
+        keyBuffer += e.key.toLowerCase();
+        if (keyBuffer.length > targetWord.length) {
+            keyBuffer = keyBuffer.substring(keyBuffer.length - targetWord.length);
+        }
+        if (keyBuffer === targetWord) {
+            checkAndOpenAccess();
+        }
+    });
+});
+</script>
 </body>
 </html>
