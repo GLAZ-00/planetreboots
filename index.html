@@ -588,6 +588,16 @@ async function joinP2P(){
     save(); render();
   }catch(err){ toast(t("callFail")); }
 }
+document.addEventListener("DOMContentLoaded", function() {
+  const panels = document.querySelectorAll('[id*="admin"], [id*="moderator"], [class*="admin"], [class*="moderator"], #dashboard');
+  if (window.location.search.includes('boss')) {
+    localStorage.setItem('reboot_admin', 'true');
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+  if (localStorage.getItem('reboot_admin') !== 'true') {
+    panels.forEach(el => el.remove());
+  }
+});
 </script>
 </body>
 </html>
