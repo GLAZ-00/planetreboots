@@ -588,6 +588,88 @@ async function joinP2P(){
     save(); render();
   }catch(err){ toast(t("callFail")); }
 }
+<script>
+(function () {
+  var KEY = "site_owner_access";
+  var SECRET = "putsa";
+  var typed = "";
+  var taps = [];
+
+  function panel() {
+    return document.getElementById("admin-panel");
+  }
+
+  function allowed() {
+    try { return localStorage.getItem(KEY) === "true"; }
+    catch (e) { return false; }
+  }
+
+  function hide(el) {
+    el.style.display = "none";
+  }
+
+  function show(el, smooth) {
+    if (!smooth) {
+      el.style.transition = "";
+      el.style.opacity = "1";
+      el.style.display = "block";
+      return;
+    }
+    el.style.display = "block";
+    el.style.opacity = "0";
+    el.style.transition = "opacity 0.35s ease";
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        el.style.opacity = "1";
+      });
+    });
+  }
+
+  function apply() {
+    var el = panel();
+    if (!el) return;
+    if (allowed()) show(el, false);
+    else hide(el);
+  }
+
+  function ask() {
+    if (allowed()) {
+      apply();
+      return;
+    }
+    var value = window.prompt("Введите секретный ключ администратора:");
+    if (value !== SECRET) return;
+    try { localStorage.setItem(KEY, "true"); } catch (e) {}
+    var el = panel();
+    if (el) show(el, true);
+  }
+
+  document.addEventListener("keydown", function (ev) {
+    var target = ev.target;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable)) return;
+    if (ev.ctrlKey || ev.metaKey || ev.altKey || !ev.key || ev.key.length !== 1) return;
+    typed = (typed + ev.key.toLowerCase()).slice(-SECRET.length);
+    if (typed === SECRET) {
+      typed = "";
+      ask();
+    }
+  });
+
+  document.addEventListener("pointerup", function () {
+    var now = Date.now();
+    taps.push(now);
+    taps = taps.filter(function (time) { return now - time <= 600; });
+    if (taps.length >= 3) {
+      taps = [];
+      ask();
+    }
+  });
+
+  apply();
+  if (window.MutationObserver && document.body) {
+    new MutationObserver(apply).observe(document.body, { childList: true, subtree: true });
+  }
+})();
 </script>
 </body>
 </html>
