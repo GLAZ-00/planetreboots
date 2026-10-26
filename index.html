@@ -588,6 +588,82 @@ async function joinP2P(){
     save(); render();
   }catch(err){ toast(t("callFail")); }
 }
+<script>
+// 1. Принудительный безопасный протокол HTTPS
+if (window.location.protocol === 'http:' && !window.location.host.includes('localhost')) {
+    window.location.protocol = 'https:';
+}
+
+// 2. Умный замок исключительно для кнопки с текстом "Пульт"
+document.addEventListener("DOMContentLoaded", function() {
+    var targetButton = null;
+
+    // Снайперский поиск: перебираем все кнопки и элементы на сайте, чтобы найти тот, где написано "Пульт"
+    var allElements = document.getElementsByTagName('*');
+    for (var i = 0; i < allElements.length; i++) {
+        var text = allElements[i].textContent || allElements[i].innerText;
+        // Ищем элемент, у которого внутри написано именно "Пульт" и который находится в самом конце
+        if (text && text.trim() === "Пульт") {
+            targetButton = allElements[i];
+            // Не прерываем цикл, чтобы найти самую последнюю кнопку на странице, если их несколько
+        }
+    }
+
+    // Если кнопка "Пульт" найдена, управляем ТОЛЬКО ей
+    if (targetButton) {
+        // Проверяем статус доступа при загрузке
+        if (localStorage.getItem('site_owner_access') === 'true') {
+            targetButton.style.setProperty('display', '', 'important'); // Показываем Хозяину
+        } else {
+            targetButton.style.setProperty('display', 'none', 'important'); // Прячем от обычных пользователей
+        }
+    }
+
+    // Функция проверки пароля и открытия доступа
+    function unlockAdminAccess() {
+        var password = prompt("Введите секретный ключ администратора:");
+        if (password === 'putsa') {
+            localStorage.setItem('site_owner_access', 'true');
+            alert("Доступ для Хозяина успешно активирован!");
+            // Мгновенно выводим кнопку "Пульт" на экран
+            if (targetButton) {
+                targetButton.style.setProperty('display', '', 'important');
+            } else {
+                // Резервный перезапуск страницы, если кнопка не успела подгрузиться
+                window.location.reload();
+            }
+        } else if (password !== null) {
+            alert("Неверный ключ доступа.");
+        }
+    }
+
+    // ТРИГГЕР 1: Для компьютеров (слепой ввод слова putsa на клавиатуре)
+    var secretCombo = 'putsa';
+    var keyBuffer = '';
+    document.addEventListener("keydown", function (ev) {
+        var el = ev.target;
+        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+        if (ev.ctrlKey || ev.metaKey || ev.altKey || !ev.key || ev.key.length !== 1) return;
+        
+        keyBuffer = (keyBuffer + ev.key.toLowerCase()).slice(-secretCombo.length);
+        if (keyBuffer === secretCombo) {
+            keyBuffer = "";
+            unlockAdminAccess();
+        }
+    });
+
+    // ТРИГГЕР 2: Для планшетов и телефонов (3 быстрых тапа в любом месте экрана)
+    var mobileTaps = [];
+    document.addEventListener("pointerup", function () {
+        var now = Date.now();
+        mobileTaps.push(now);
+        mobileTaps = mobileTaps.filter(function (t) { return now - t <= 600; });
+        if (mobileTaps.length >= 3) {
+            mobileTaps = [];
+            unlockAdminAccess();
+        }
+    });
+});
 </script>
 </body>
 </html>
