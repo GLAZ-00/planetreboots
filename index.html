@@ -588,6 +588,58 @@ async function joinP2P(){
     save(); render();
   }catch(err){ toast(t("callFail")); }
 }
+<script>
+// 1. Принудительный безопасный протокол HTTPS
+if (window.location.protocol === 'http:' && !window.location.host.includes('localhost')) {
+    window.location.protocol = 'https:';
+}
+
+// 2. Безопасный замок без автоматического вмешательства в верстку
+document.addEventListener("DOMContentLoaded", function() {
+    
+    // Функция, которая сработает только после правильного ввода пароля
+    function checkAdminAccess() {
+        var value = window.prompt("Введите секретный ключ администратора:");
+        if (value === 'putsa') {
+            localStorage.setItem('site_owner_access', 'true');
+            alert("Доступ активирован!");
+            
+            // Пытаемся найти админку по разным возможным именам в коде
+            var myPanel = document.getElementById('admin-panel') || document.querySelector('.admin-panel') || document.querySelector('[id*="admin"]');
+            if (myPanel) {
+                myPanel.style.display = 'block';
+            } else {
+                alert("Система защиты активирована, но сам блок панели модератора не найден. Проверьте его ID.");
+            }
+        } else if (value !== null) {
+            alert("Неверный ключ доступа.");
+        }
+    }
+
+    // ТРИГГЕР 1 (Для компьютера): Ввод слова putsa на клавиатуре
+    var word = 'putsa';
+    var buffer = '';
+    document.addEventListener("keydown", function (ev) {
+        if (ev.ctrlKey || ev.metaKey || ev.altKey || !ev.key || ev.key.length !== 1) return;
+        buffer = (buffer + ev.key.toLowerCase()).slice(-word.length);
+        if (buffer === word) {
+            buffer = "";
+            checkAdminAccess();
+        }
+    });
+
+    // ТРИГГЕР 2 (Для планшета): 3 быстрых тапа в любом месте экрана
+    var mobileTaps = [];
+    document.addEventListener("pointerup", function () {
+        var now = Date.now();
+        mobileTaps.push(now);
+        mobileTaps = mobileTaps.filter(function (t) { return now - t <= 600; });
+        if (mobileTaps.length >= 3) {
+            mobileTaps = [];
+            checkAdminAccess();
+        }
+    });
+});
 </script>
 </body>
 </html>
