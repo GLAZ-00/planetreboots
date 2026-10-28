@@ -107,10 +107,18 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
 (function () {
   var currentLang = localStorage.getItem("planet_lang") || "ru";
   var DICT = {
-    ru: { home: "Главная", feed: "Лента", ideas: "Идеи", lab: "Лаборатория", groups: "Группы", messages: "Сообщения", fund: "Фонд", profile: "Профиль", panel: "Пульт", title: "МАНИФЕСТ REBOOT", text: "Платформа гибридного интеллекта (Робот + Люди + Навигатор). Бескровное эволюционное вытеснение неэффективной власти чиновников честным решением проблем общества." },
-    en: { home: "Home", feed: "Feed", ideas: "Ideas", lab: "Lab", groups: "Groups", messages: "Messages", fund: "Fund", profile: "Profile", panel: "Dashboard", title: "REBOOT MANIFESTO", text: "A hybrid intelligence platform (Robot + Humans + Navigator) to evolutionarily replace inefficient bureaucratic power by honestly resolving societal problems." }
+    ru: {
+      home: "Главная", feed: "Лента", ideas: "Идеи", lab: "Лаборатория", groups: "Группы", messages: "Сообщения", fund: "Фонд", profile: "Профиль", panel: "Пульт",
+      title: "КОНЦЕССИЯ РАЗУМА: СИТУАЦИОННЫЙ ЦЕНТР PLANET REBOOT",
+      text: "Этот сайт создан не для развлечений или пустых политических споров. Здесь за каждым обсуждением следует жесткий аналитический вывод и принятие конкретных решений. Мы объединили созидателей со всех уголков Земли — независимо от профессий, конфессий и взглядов — ради одной священной цели: спасения нашего общего дома.<br><br>В реальном времени мы отслеживаем пульс Земли: от тектонических сдвигов до глобальных катаклизмов. Мы глубоко анализируем решения государств, законы и действия политиков, влекущие за собой труднообратимые процессы для человечества. Наша задача — силами распределенного экспертного сообщества мгновенно находить оптимальные выходы из финансовых катастроф, экологических кризисов и войн.<br><br>Если вы готовы созидать, исследовать, брать на себя ответственность и действовать во имя будущего без агрессии и взаимных обвинений — ваши способности здесь жизненно необходимы. Добро пожаловать в Концессию Разума."
+    },
+    en: {
+      home: "Home", feed: "Feed", ideas: "Ideas", lab: "Lab", groups: "Groups", messages: "Messages", fund: "Fund", profile: "Profile", panel: "Dashboard",
+      title: "CONCESSION OF REASON: PLANET REBOOT SITUATIONAL CENTER",
+      text: "This site is not for entertainment or empty political arguments. Here, every discussion is followed by a rigorous analytical conclusion and concrete decision-making. We have united creators from all corners of the Earth — regardless of profession, creed, or views — for one sacred goal: saving our common home.<br><br>In real-time, we monitor the pulse of the Earth: from tectonic shifts to global cataclysms. We deeply analyze state decisions, laws, and the actions of politicians that entail irreversible consequences for humanity. Our mission is to immediately find optimal ways out of financial disasters, ecological crises, and wars through a distributed expert community.<br><br>If you are ready to create, explore, take responsibility, and act for the sake of the future without aggression or mutual accusations — your capabilities are vitally needed here. Welcome to the Concession of Reason."
+    }
   };
-
+  
   function applyLang() {
     var d = DICT[currentLang];
     var btnHome = document.querySelector('nav button[data-view="home"]'); if(btnHome) btnHome.textContent = d.home;
