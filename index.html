@@ -130,7 +130,6 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
       text: "This site is not for entertainment or empty political arguments. Here, every discussion is followed by a rigorous analytical conclusion and concrete decision-making. We have united creators from all corners of the Earth — regardless of profession, creed, or views — for one sacred goal: saving our common home.<br><br>In real-time, we monitor the pulse of the Earth: from tectonic shifts to global cataclysms. We deeply analyze state decisions, laws, and the actions of politicians that entail irreversible consequences for humanity. Our mission is to immediately find optimal ways out of financial disasters, ecological crises, and wars through a distributed expert community.<br><br>If you are ready to create, explore, take responsibility, and act for the sake of the future without aggression or mutual accusations — your capabilities are vitally needed here. Welcome to the Territory of Sovereign Reason."
     }
   };
-  
   function applyLang() {
     var d = DICT[currentLang];
     var btnHome = document.querySelector('nav button[data-view="home"]'); if(btnHome) btnHome.textContent = d.home;
@@ -142,12 +141,18 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     var btnFund = document.querySelector('nav button[data-view="fund"]'); if(btnFund) btnFund.textContent = d.fund;
     var btnProf = document.querySelector('nav button[data-view="profile"]'); if(btnProf) btnProf.textContent = d.profile;
     var btnAdmin = document.getElementById("secret-admin-btn"); if(btnAdmin) btnAdmin.textContent = d.panel;
-    
-    if (view === "home") {
-      document.getElementById("app").innerHTML = '<div class="card"><h1>' + d.title + '</h1><p class="serif">' + d.text + '</p></div>';
-    }
-  }
 
+    if (view === "home") {
+        document.getElementById("app").innerHTML = 
+            '<div class="home-container">' +
+                '<div class="kicker">' + d.tag + '</div>' +
+                '<h1 class="home-title">' + d.title + '</h1>' +
+                '<h2 class="home-subtitle">' + d.subtitle + '</h2>' +
+                '<div class="home-divider" style="width:100px; height:2px; background:var(--primary); margin:1.5rem auto;"></div>' +
+                '<p class="home-text" style="white-space:pre-line; text-align:justify; line-height:1.8; opacity:0.9;">' + d.text + '</p>' +
+            '</div>';
+    }
+}
   var PROFILE_KEY = "planet_profile";
   var LOCK_KEY = "planet_locked";
   var OWNER_KEY = "site_owner_access";
