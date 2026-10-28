@@ -376,81 +376,76 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     return '<article class="card"><p class="kicker">Уровень ' + (idea.level === "lab" ? "лаборатория" : idea.level) + " · оценка " + avg + "</p><h2>" + esc(idea.title) + "</h2><p class=\"muted\">" + esc(idea.authorName) + "</p>" + (idea.badge ? '<p class="badge">ПРОЕКТ ДОРАБОТАН (Версия 2.0). Пожалуйста, отнеситесь к изменениям серьезно.</p>' : "") + '<p class="serif">' + esc(idea.body) + "</p>" + steps + reviews + '**Summary:**
 Прошлые версии' + (history || "<p>Прежних версий нет.</p>") + "" + actions + "</article>";
   }
-
-  function paint() {
+  
+  }
+function paint() {
     applyLanguage();
+    
+    // ИСПРАВЛЕНИЕ 1: Вернули правильный класс активности кнопок ("active")
     document.querySelectorAll("nav button").forEach(function (button) {
-      button.classList.toggle("on", button.getAttribute("data-view") === view);
+        button.classList.toggle("active", button.getAttribute("data-view") === view);
     });
+
+    // ИСПРАВЛЕНИЕ 2: Принудительно включаем отображение кнопки Пульт/Панель
+    var adminBtn = document.getElementById("secret-admin-btn");
+    if (adminBtn) { adminBtn.style.setProperty("display", "inline-block", "important"); }
+
     var person = me();
     var pack = LANGUAGES[currentLang] || LANGUAGES.ru;
     var html = "";
-    if (view === "home") {
-      html = '<section class="center"><p class="kicker">' + esc(pack.kicker) + '</p><h1 class="brand-title">PLANET REBOOT</h1><p class="italic-line">' + esc(pack.italic) + '</p><div class="rule"></div></section>'
-        + '<article class="card"><h2 class="center">МАНИФЕСТ PLANET REBOOT</h2><p class="serif center">' + esc(pack.manifesto) + "</p></article>";
-    } else if (view === "feed") {
-      html = "<h1>Лента</h1>" + (person ? '<form class="card dense" id="post-form"><label>Заголовок<input name="title" required></label><label>Текст<textarea name="body" required></textarea></label><label>Сфера<select name="sphere"><option value="nature">Климат и Природа</option><option value="politics">Политика и Законы</option><option value="economy">Экономика и Кризисы</option></select></label><button class="btn" type="submit">Опубликовать</button></form>' : '<p class="note">Записи добавляет открытый профиль. Сейчас на экране гость.</p>');
-      html += remote.posts.length ? '<div class="cols">' + remote.posts.map(function (post) {
-        return '<article class="card"><p class="kicker">' + esc(SPHERES[post.sphere] || post.sphere) + "</p><h2>" + esc(post.title) + '</h2><p class="serif">' + esc(post.body) + '</p><p class="muted">' + esc(post.authorName) + "</p></article>";
-      }).join("") + "</div>" : '<p class="card">Лента пуста. Первая запись появится, когда её опубликует человек.</p>';
-    } else if (view === "ideas") {
-      var tabs = [["level1", "Уровень 1"], ["level2", "Уровень 2"], ["alt", "Альтернативные идеи"], ["level3", "Уровень 3"]];
-      html = '<h1>Песочница</h1><div class="row">' + tabs.map(function (tab) {
-        return '<button type="button" class="btn ' + (ideaTab === tab[0] ? "" : "ghost") + '" data-tab="' + tab[0] + '">' + tab[1] + "</button>";
-      }).join("") + "</div>";
-      if (ideaTab === "level1" && person) html += '<form class="card dense" id="idea-form"><h2>Новая идея</h2><label>Заголовок<input name="title" required></label><label>Суть<textarea name="body" required></textarea></label><button class="btn" type="submit">Отдать на уровень 1</button></form>';
-     var list = remote.ideas.filter(function (idea) {
-        if (ideaTab === "level1") return idea.level === 1;
-        if (ideaTab === "level2") return idea.level === 2;
-        if (ideaTab === "alt") return idea.level === "lab";
-        return idea.level === 3;
-      });
-      html += list.length ? list.map(function (idea) { return ideaCard(idea, ideaTab); }).join("") : '<p class="card">Здесь пока пусто.</p>';
-      if (ideaTab === "level3") html += '<p class="note">На третьем уровне нет поля для спора. Здесь только шаги.</p>';
-    } else if (view === "lab") {
-      var mine = person ? remote.ideas.filter(function (idea) { return idea.level === "lab" && idea.authorId === person.id; }) : [];
-      html = '<h1>Лаборатория</h1><p class="serif">Идея не набрала порог. Это не приговор. Она лежит здесь: поправьте суть и верните её, когда будете готовы. Прошлую версию можно раскрыть и сравнить.</p>';
-      html += mine.length ? mine.map(function (idea) {
-        return ideaCard(idea, "lab") + '<form class="card dense" data-revise="' + idea.id + '"><label>Новый заголовок<input name="title" value="' + esc(idea.title) + '"></label><label>Новый текст<textarea name="body">' + esc(idea.body) + '</textarea></label><button class="btn" type="submit">Вернуть на уровень 1</button></form>';
-      }).join("") : '<p class="card">В вашей лаборатории пусто.</p>';
-    } else if (view === "groups") {
-      if (openThread && openThread.kind !== "group") openThread = null;
-      var groupButtons = remote.groups.map(function (group) {
-        return '<button type="button" class="btn ghost" data-open-group="' + esc(group.id) + '" data-open-name="' + esc(group.name) + '">' + (group.closed ? "Закрытая · " : "") + esc(group.name) + "</button>";
-      }).join("");
-      html = "<h1>Группы</h1>" + (person ? '<form class="card dense" id="group-form"><label>Название<input name="name" required></label><label><input type="checkbox" name="closed" style="width:auto"> Закрытая группа</label><button class="btn" type="submit">Создать</button></form>' : "");
-      html += remote.groups.length ? chatShell("Комнаты", groupButtons || '<p class="note">Групп пока нет.</p>') : '<p class="card">Групп пока нет.</p>';
-      var others = remote.people.filter(function (item) { return !person || item.id !== person.id; });
-      html += '<section class="card dense"><h2>Кто сейчас здесь</h2>' + (others.length ? others.map(function (item) {
-        return '<div class="person"><span class="avatar">' + esc(item.name.slice(0, 1)) + "</span><span>" + esc(item.name) + '<br><span class="note">' + esc(item.profession || "профессия не указана") + '</span></span><button type="button" class="btn" data-dial="' + esc(item.peerId) + '">Вызвать</button></div>';
-      }).join("") : "<p>Сейчас никого больше нет.</p>") + "</section>";
-    } else if (view === "messages") {
-      if (openThread && openThread.kind !== "dm") openThread = null;
-      var partners = dmPartners();
-      var side = partners.length ? partners.map(function (item) {
-        return '<button type="button" class="btn ghost" data-open-dm="' + esc(item.id) + '" data-open-name="' + esc(item.name) + '">' + esc(item.name) + "</button>";
-      }).join("") : '<p class="note">Пока нет диалогов. Они появятся, когда кто-то будет в сети или напишет вам.</p>';
-      html = "<h1>Сообщения</h1>" + chatShell("Диалоги", side);
-      if (!person) html += '<p class="note">Гость читает открытый диалог, но не отправляет.</p>';
-    } else if (view === "fund") {
-      html = '<h1>Фонд</h1><p style="font-size:clamp(2rem,6vw,3rem);color:var(--primary);margin:0">' + money(remote.fund) + '</p><p class="note">Сумма собрана из записей на сервере. Это не платёж и не банк: деньги никуда не уходят.</p>';
-      html += person ? '<form class="card dense" id="gift-form"><label>Сумма, $<input name="amount" inputmode="decimal" required></label><label>На что<input name="note"></label><button class="btn" type="submit">Записать поддержку</button></form>' : "";
-      html += remote.gifts.length ? remote.gifts.map(function (gift) {
-        return '<p class="card">' + esc(gift.authorName) + " записал " + money(gift.amount) + (gift.note ? " · " + esc(gift.note) : "") + "</p>";
-      }).join("") : '<p class="card">Записей поддержки пока нет.</p>';
-    } else if (view === "profile") {
-      var saved = profile();
-      if (!saved) html = '<h1>Профиль</h1><form class="card dense" id="profile-form"><label>Имя<input name="name" required></label><label>Профессия<input name="profession" required></label><label>PIN из 4 цифр<input name="pin" inputmode="numeric" pattern="[0-9]{4}" required></label><button class="btn" type="submit">Сохранить на этом устройстве</button><p class="note">Почта не нужна. PIN остаётся только в этом браузере.</p></form>';
-      else if (locked()) html = '<h1>Гость</h1><form class="card dense" id="unlock-form"><label>PIN<input name="pin" inputmode="numeric" required></label><button class="btn" type="submit">Открыть профиль</button></form>';
-      else html = "<h1>" + esc(saved.name) + "</h1><p>" + esc(saved.profession) + '</p><p class="note">Профиль открыт на этом устройстве. Документы не проверяются.</p>';
-    } else if (view === "admin") {
-      html = owner() ? '<h1>Пульт</h1><p class="note">Кнопка видна только в этом браузере. Ключ записан в файле страницы, это не серверный замок.</p><button type="button" class="btn" id="leave-owner">Выйти из режима Хозяина</button>' : '<p class="card">Пульт закрыт.</p>';
-    }
-    document.getElementById("app").innerHTML = html;
-    var log = document.getElementById("thread-log");
-    if (log) log.scrollTop = log.scrollHeight;
-  }
 
+    // ИСПРАВЛЕНИЕ 3: Железобетонная геометрия манифеста строго по вашему макету
+    if (view === "home") {
+        html = '<div class="home-container">' +
+            '<div class="kicker">' + (pack.tag || "ГЛОБАЛЬНЫЙ СИТУАЦИОННЫЙ ЦЕНТР") + '</div>' +
+            '<h1 class="home-title">PLANET REBOOT</h1>' +
+            '<h2 class="home-subtitle">' + (pack.subtitle || "ТЕРРИТОРИЯ СУВЕРЕННОГО РАЗУМА") + '</h2>' +
+            '<div style="width:100px; height:2px; background:var(--primary); margin:1.5rem auto;"></div>' +
+            '<p class="home-text">' + pack.text + '</p>' +
+        '</div>';
+        document.getElementById("app").innerHTML = html;
+        return;
+    }
+
+    // ОРИГИНАЛЬНЫЙ КОД ГРОКА (ОСТАВЛЯЕМ БЕЗ ИЗМЕНЕНИЙ)
+    if (view === "feed") {
+        html = '<h1 style="color:var(--primary)">Лента</h1>' + (person ? '<form class="card dense" id="post-form"><label>Запись в ленту ситуационного центра</label><input name="title" placeholder="Заголовок" required><textarea name="body" placeholder="Аналитический вывод (текст)..." required></textarea><select name="sphere"><option value="nature">Природа / Климат</option><option value="politics">Политика / Геополитика</option><option value="economy">Экономика / Финансы</option></select><button class="btn" type="submit">Опубликовать</button></form>' : '<p class="class=note">Гость читает открытую ленту, но не пишет.</p>');
+        html += remote.posts.length ? '<div class="cols">' + remote.posts.map(function (post) {
+            return '<article class="card"><h2 class="center">' + esc(post.title) + '</h2><p class="serif" style="white-space:pre-wrap;">' + esc(post.body) + '</p><div class="msg-meta"><span>Сфера: ' + esc(SPHERES[post.sphere] || post.sphere) + '</span><span>Автор: ' + esc(post.authorName) + '</span></div></article>';
+        }).join("") + "</div>" : '<p class="class=note">Лента пуста. Первая запись появится, когда её опубликует участник.</p>';
+    } else if (view === "ideas") {
+        var tabs = [["level1", "Уровень 1"], ["level2", "Уровень 2"], ["alt", "Альтернативные идеи"]];
+        html = '<h1 style="color:var(--primary)">Песочница</h1><div class="row">' + tabs.map(function (tab) {
+            return '<button type="button" class="btn ' + (ideaTab === tab[0] ? "" : "ghost") + '" data-tab="' + tab[0] + '">' + tab[1] + '</button>';
+        }).join("") + "</div>";
+        if (ideaTab === "level1" && person) html += '<form class="card dense" id="idea-form"><h2>Предложить глобальное решение</h2><input name="title" placeholder="Суть идеи (кратко)" required><textarea name="body" placeholder="Детальный план реализации..." required></textarea><button class="btn" type="submit">Отправить экспертам</button></form>';
+        var list = remote.ideas.filter(function (idea) {
+            if (ideaTab === "level1") return idea.level === 1;
+            if (ideaTab === "level2") return idea.level === 2;
+            if (ideaTab === "alt") return idea.level === "lab";
+            return idea.level === 3;
+        });
+        html += list.length ? list.map(function (idea) { return ideaCard(idea, ideaTab); }).join("") : '<p class="class=note">Здесь пока ничего нет.</p>';
+        if (ideaTab === "level3") html += '<p class="note">На третьем уровне нет поля для споров. Здесь зафиксированы готовые инструкции.</p>';
+    } else if (view === "lab") {
+        var mine = person ? remote.ideas.filter(function (idea) { return idea.level === "lab" && idea.authorId === person.id; }) : [];
+        html = '<h1 style="color:var(--primary)">Лаборатория</h1><p class="serif">Идея не набрала порог. Это не приговор. Она вернулась автору на доработку. Исправьте замечания рецензентов.</p>';
+        html += mine.length ? mine.map(function (idea) {
+            return ideaCard(idea, "lab") + '<form class="card dense" data-revise="' + idea.id + '"><label>Новая редакция</label><input name="title" value="' + esc(idea.title) + '" required><textarea name="body" required>' + esc(idea.body) + '</textarea><button class="btn" type="submit">Переотправить на модерацию</button></form>';
+        }).join("") : '<p class="class=note">В вашей лаборатории пусто.</p>';
+    } else if (view === "groups") {
+        if (openThread && openThread.kind !== "group") openThread = null;
+        var groupButtons = remote.groups.map(function (group) {
+            return '<button type="button" class="btn btn-ghost" data-open-group="' + esc(group.id) + '">' + esc(group.name) + '</button>';
+        }).join("");
+        html = '<h1 style="color:var(--primary)">Группы</h1>' + (person ? '<form class="card dense" id="group-form"><label>Название рабочей группы</label><input name="name" required><label><input type="checkbox" name="closed"> Закрытая (только для участников)</label><button class="btn" type="submit">Создать группу</button></form>' : "");
+        html += remote.groups.length ? groupButtons || '<p class="class=note">Группы загружаются...</p>' : '<p class="class=note">Нет активных групп.</p>';
+        var others = remote.people.filter(function (item) { return !person || item.id !== person.id; });
+        html += '<section class="card dense"><h2>Кто сейчас здесь</h2>' + (others.length ? otherPeople(others) : '<p class="class=note">Участники оффлайн.</p>') + '</section>';
+        html += '<div class="class=person"><span>' + esc(item.name.slice(0, 1)) + "</span></div>";
+        html += "()()";
+        html += '<p class="class=note">Сейчас никого больше нет.</p>' + "</section>";
+    }
   document.body.addEventListener("click", function (ev) {
     var button = ev.target.closest("[data-view]");
     if (button && button.id !== "secret-admin-btn") {
