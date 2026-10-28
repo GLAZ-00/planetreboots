@@ -9,8 +9,8 @@
 <style>
 :root{--bg:#061018;--surface:#0c1c28;--fg:#e6f2f6;--muted:#8aa3b3;--primary:#2fbf9a;--ink:#04241c;--border:#1a3344;--live:#c44747}
 *{box-sizing:border-box}
-html{background:var(--bg);color:var(--fg)}
-body{margin:0;min-height:100dvh;font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.5}
+html,body{min-height:100dvh;color:var(--fg);background:linear-gradient(rgba(6, 16, 24, 0.85), rgba(6, 16, 24, 0.85)), url('bg.png') no-repeat center center fixed;background-size:cover}
+body{margin:0;font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.5}
 button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer}
 button:active{transform:scale(.96)}
@@ -26,11 +26,15 @@ nav button.on{color:var(--primary)}
 #secret-admin-btn.owner{background:var(--primary);color:var(--ink)}
 main{max-width:1100px;margin:0 auto;padding:28px 16px 96px}
 h1{font-weight:500;letter-spacing:.08em;font-size:clamp(2rem,6vw,3.2rem);margin:12px 0}
+h1.brand-title{margin-top:2.5rem;padding:0 5.5rem;display:inline-block}
 h2{font-weight:500;font-size:1.3rem;margin:0}
 .kicker{color:var(--primary);letter-spacing:.16em;text-transform:uppercase;font-size:.75rem}
 .muted{color:var(--muted)}
 .serif{font-family:"Source Serif 4",Georgia,serif}
+.italic-line{font-style:italic;letter-spacing:.14em;margin:0}
+.rule{width:100px;height:1px;background:var(--primary);margin:16px auto}
 .card{border:1px solid var(--border);background:var(--surface);padding:20px;margin-top:16px}
+.dense{background:rgba(15, 23, 42, 0.95);backdrop-filter:blur(8px);border:1px solid #1e293b}
 .center{text-align:center}
 .row{display:flex;flex-wrap:wrap;gap:10px}
 .btn{min-height:48px;padding:0 18px;border:0;background:var(--primary);color:var(--ink)}
@@ -39,8 +43,7 @@ label{display:block;margin-top:12px;color:var(--muted);font-size:.9rem}
 input,textarea,select{width:100%;margin-top:6px;min-height:48px;background:var(--bg);border:1px solid var(--border);padding:8px 12px}
 textarea{min-height:96px;resize:vertical}
 .cols{display:grid;gap:12px}
-@media(min-width:900px){.cols{grid-template-columns:repeat(3,1fr)}}
-.decision{border:4px solid var(--primary);padding:14px;margin-top:14px;background:var(--bg)}
+@media(min-width:900px){.cols{grid-template-columns:repeat(3,1fr)}.chat-shell{grid-template-columns:240px 1fr}}
 .person{display:flex;align-items:center;gap:10px;margin-top:10px}
 .avatar{width:44px;height:44px;border:1px solid var(--border);display:grid;place-items:center;color:var(--primary)}
 .score button{min-width:44px;min-height:44px;margin:4px 4px 0 0}
@@ -49,24 +52,22 @@ textarea{min-height:96px;resize:vertical}
 .phone{min-height:64px;min-width:140px;border:0;color:#fff;font-size:1.05rem}
 .phone.yes{background:#1f8a4c}
 .phone.no{background:#a32020}
-#incoming,#stage{position:fixed;inset:0;z-index:40;background:rgba(2,8,12,.92);display:none;align-items:center;justify-content:center;padding:16px}
+#incoming,#stage{position:fixed;inset:0;z-index:40;background:rgba(2,8,12,.72);display:none;align-items:center;justify-content:center;padding:16px}
 #incoming.open,#stage.open{display:flex}
-.sheet{width:min(920px,100%);background:var(--surface);border:1px solid var(--border);padding:16px}
+.sheet{width:min(920px,100%);padding:16px}
 .call-stage{display:grid;grid-template-columns:1fr 1fr;height:min(70vh,560px);background:#02080c}
 video.cam{width:100%;height:100%;object-fit:contain !important;object-position:center center;background:#02080c}
 .note{color:var(--muted);font-size:.8rem}
- .home-title { 
-    font-size: 3.5rem; 
-    font-weight: 800; 
-    letter-spacing: 2px; 
-    line-height: 1.1; 
-    margin-top: 2rem;        /* Промежуток от зеленого текста сверху */
-    margin-bottom: 1.5rem;   /* Отступ до нижней строки */
-    padding: 0 5.5rem;       /* Сжатие по бокам (воздух на 1.5 буквы) */
-    width: auto; 
-    display: inline-block; 
-}
-
+.chat-shell{display:grid;gap:12px;margin-top:16px}
+.thread-list button{width:100%;text-align:left}
+.log{min-height:220px;max-height:46vh;overflow:auto;padding:8px}
+.bubble{margin:8px 0;padding:10px 12px}
+.preview{display:block;max-width:220px;max-height:180px;object-fit:contain;margin-top:8px;background:#02080c}
+.file-link{display:inline-block;margin-top:8px;color:var(--primary)}
+.composer{display:flex;gap:8px;align-items:center;margin-top:12px}
+.composer input[type="text"]{flex:1;width:auto;margin:0}
+.clip{margin:0;min-height:48px;min-width:48px;display:grid;place-items:center;border:1px solid #1e293b;cursor:pointer}
+.clip input{display:none}
 </style>
 </head>
 <body>
@@ -87,16 +88,17 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
       <button type="button" data-view="profile">Профиль</button>
       <button type="button" id="secret-admin-btn" data-view="admin" style="display: none !important;">Пульт</button>
     </nav>
-    <div class="lang-panel" style="display:flex; gap:6px; margin:0 12px;">
-      <button type="button" class="lang-btn" data-lang="ru" style="padding:4px 8px; background:var(--surface); border:1px solid var(--border); min-height:36px;">RU</button>
-      <button type="button" class="lang-btn" data-lang="en" style="padding:4px 8px; background:var(--surface); border:1px solid var(--border); min-height:36px;">EN</button>
-    </div>
+    <select id="lang-selector" style="background:var(--surface); border:1px solid var(--border); color:var(--fg); padding:4px 8px; min-height:36px; width:auto; margin:0 8px;">
+      <option value="ru">RU</option>
+      <option value="en">EN</option>
+      <option value="cn">中文</option>
+    </select>
     <button type="button" id="lock-btn">Выйти / Запереть профиль</button>
   </div>
 </header>
 <main id="app"></main>
 <div id="incoming">
-  <div class="sheet center">
+  <div class="sheet dense center">
     <p class="kicker">Входящий вызов</p>
     <h2 id="caller-name">Участник</h2>
     <div class="row" style="justify-content:center;margin-top:16px">
@@ -106,7 +108,7 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
   </div>
 </div>
 <div id="stage">
-  <div class="sheet">
+  <div class="sheet dense">
     <p class="kicker" id="call-status">Видеосвязь</p>
     <div class="call-stage">
       <video id="local-video" class="cam" autoplay muted playsinline></video>
@@ -118,41 +120,26 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
 <script>
 (function () {
   var currentLang = localStorage.getItem("planet_lang") || "ru";
-  var DICT = {
+  var LANGUAGES = {
     ru: {
-      home: "Главная", feed: "Лента", ideas: "Идеи", lab: "Лаборатория", groups: "Группы", messages: "Сообщения", fund: "Фонд", profile: "Профиль", panel: "Пульт",
-      title: "КОНЦЕССИЯ РАЗУМА: СИТУАЦИОННЫЙ ЦЕНТР PLANET REBOOT",
-      text: "Этот сайт создан не для развлечений или пустых политических споров. Здесь за каждым обсуждением следует жесткий аналитический вывод и принятие конкретных решений. Мы объединили созидателей со всех уголков Земли — независимо от профессий, конфессий и взглядов — ради одной священной цели: спасения нашего общего дома.<br><br>В реальном времени мы отслеживаем пульс Земли: от тектонических сдвигов до глобальных катаклизмов. Мы глубоко анализируем решения государств, законы и действия политиков, влекущие за собой труднообратимые процессы для человечества. Наша задача — силами распределенного экспертного сообщества мгновенно находить оптимальные выходы из финансовых катастроф, экологических кризисов и войн.<br><br>Если вы готовы созидать, исследовать, брать на себя ответственность и действовать во имя будущего без агрессии и взаимных обвинений — ваши способности здесь жизненно необходимы. Добро пожаловать на Территорию Суверенного Разума."
+      nav: { home: "Главная", feed: "Лента", ideas: "Идеи", lab: "Лаборатория", groups: "Группы", messages: "Сообщения", fund: "Фонд", profile: "Профиль", admin: "Пульт" },
+      kicker: "ГЛОБАЛЬНЫЙ СИТУАЦИОННЫЙ ЦЕНТР",
+      italic: "ТЕРРИТОРИЯ СУВЕРЕННОГО РАЗУМА",
+      manifesto: "Платформа гибридного интеллекта (Робот + Люди + Навигатор). Наша миссия — бескровное эволюционное вытеснение неэффективной власти чиновников путем доказательства того, что распределенное сообщество решает бытовые, финансовые и экстренные проблемы человечества в тысячи раз быстрее и честнее любого государства. Добро пожаловать на Территорию Суверенного Разума."
     },
     en: {
-      home: "Home", feed: "Feed", ideas: "Ideas", lab: "Lab", groups: "Groups", messages: "Messages", fund: "Fund", profile: "Profile", panel: "Dashboard",
-      title: "CONCESSION OF REASON: PLANET REBOOT SITUATIONAL CENTER",
-      text: "This site is not for entertainment or empty political arguments. Here, every discussion is followed by a rigorous analytical conclusion and concrete decision-making. We have united creators from all corners of the Earth — regardless of profession, creed, or views — for one sacred goal: saving our common home.<br><br>In real-time, we monitor the pulse of the Earth: from tectonic shifts to global cataclysms. We deeply analyze state decisions, laws, and the actions of politicians that entail irreversible consequences for humanity. Our mission is to immediately find optimal ways out of financial disasters, ecological crises, and wars through a distributed expert community.<br><br>If you are ready to create, explore, take responsibility, and act for the sake of the future without aggression or mutual accusations — your capabilities are vitally needed here. Welcome to the Territory of Sovereign Reason."
+      nav: { home: "Home", feed: "Feed", ideas: "Ideas", lab: "Laboratory", groups: "Groups", messages: "Messages", fund: "Fund", profile: "Profile", admin: "Console" },
+      kicker: "GLOBAL SITUATIONAL CENTER",
+      italic: "TERRITORY OF SOVEREIGN REASON",
+      manifesto: "A hybrid intelligence platform (Robot + Humans + Navigator). Our mission is the bloodless evolutionary replacement of inefficient bureaucratic power by proving that a distributed community resolves routine, financial, and emergency problems thousands of times faster and more honestly than any state. Welcome to the Territory of Sovereign Reason."
+    },
+    cn: {
+      nav: { home: "首页", feed: "动态", ideas: "想法", lab: "实验室", groups: "小组", messages: "消息", fund: "基金", profile: "资料", admin: "控制台" },
+      kicker: "全球态势中心",
+      italic: "主权理性之地",
+      manifesto: "混合智能平台（机器人 + 人类 + 导航员）。我们的使命是通过证明分布式社区在处理日常、财务和紧急突发问题时，比任何传统机构快数千倍且更加公平，从而实现对低效官僚体制的进化式替代。欢迎来到主权理性之地。"
     }
   };
-  function applyLang() {
-    var d = DICT[currentLang];
-    var btnHome = document.querySelector('nav button[data-view="home"]'); if(btnHome) btnHome.textContent = d.home;
-    var btnFeed = document.querySelector('nav button[data-view="feed"]'); if(btnFeed) btnFeed.textContent = d.feed;
-    var btnIdeas = document.querySelector('nav button[data-view="ideas"]'); if(btnIdeas) btnIdeas.textContent = d.ideas;
-    var btnLab = document.querySelector('nav button[data-view="lab"]'); if(btnLab) btnLab.textContent = d.lab;
-    var btnGroups = document.querySelector('nav button[data-view="groups"]'); if(btnGroups) btnGroups.textContent = d.groups;
-    var btnMsgs = document.querySelector('nav button[data-view="messages"]'); if(btnMsgs) btnMsgs.textContent = d.messages;
-    var btnFund = document.querySelector('nav button[data-view="fund"]'); if(btnFund) btnFund.textContent = d.fund;
-    var btnProf = document.querySelector('nav button[data-view="profile"]'); if(btnProf) btnProf.textContent = d.profile;
-    var btnAdmin = document.getElementById("secret-admin-btn"); if(btnAdmin) btnAdmin.textContent = d.panel;
-
-    if (view === "home") {
-        document.getElementById("app").innerHTML = 
-            '<div class="home-container">' +
-                '<div class="kicker">' + d.tag + '</div>' +
-                '<h1 class="home-title">' + d.title + '</h1>' +
-                '<h2 class="home-subtitle">' + d.subtitle + '</h2>' +
-                '<div class="home-divider" style="width:100px; height:2px; background:var(--primary); margin:1.5rem auto;"></div>' +
-                '<p class="home-text" style="white-space:pre-line; text-align:justify; line-height:1.8; opacity:0.9;">' + d.text + '</p>' +
-            '</div>';
-    }
-}
   var PROFILE_KEY = "planet_profile";
   var LOCK_KEY = "planet_locked";
   var OWNER_KEY = "site_owner_access";
@@ -169,7 +156,18 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
   var pendingCall = null;
   var typed = "";
   var taps = [];
+  var openThread = null;
+  var pendingFile = null;
 
+  function applyLanguage() {
+    var pack = LANGUAGES[currentLang] || LANGUAGES.ru;
+    document.querySelectorAll("nav button[data-view]").forEach(function (button) {
+      var key = button.getAttribute("data-view");
+      if (pack.nav[key]) button.textContent = pack.nav[key];
+    });
+    var langBox = document.getElementById("lang-selector");
+    if (langBox && langBox.value !== currentLang) langBox.value = currentLang;
+  }
   function profile() {
     try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || "null"); }
     catch (error) { return null; }
@@ -183,11 +181,6 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     var person = profile();
     if (!person || locked()) return null;
     return person;
-  }
-  function displayName() {
-    var person = profile();
-    if (!person || locked()) return "Гость";
-    return person.name;
   }
   function esc(value) {
     return String(value == null ? "" : value).replace(/[&<>"']/g, function (char) {
@@ -205,7 +198,7 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
       button.classList.add("owner");
     } else {
       button.style.setProperty("display", "none", "important");
-      button.classList.remove("owner");
+     button.classList.remove("owner");
     }
   }
   function askOwner() {
@@ -220,13 +213,12 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     showAdmin(false);
     if (view === "admin") { view = "home"; paint(); }
   }
-
   function pull() {
     return fetch("/api/state").then(function (res) { return res.json(); }).then(function (data) {
       remote = data;
       paint();
     }).catch(function () {
-      document.getElementById("app").innerHTML = '<p class="card">Сервер не ответил. Обновите страницу.</p>';
+      document.getElementById("app").innerHTML = '<p class="card dense">Сервер не ответил. Обновите страницу.</p>';
     });
   }
   function send(url, body) {
@@ -240,6 +232,16 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     var person = me();
     if (!person || !peerId) return;
     send("/api/presence", { id: person.id, name: person.name, profession: person.profession, peerId: peerId });
+  }
+  function refreshChat() {
+    fetch("/api/state").then(function (res) { return res.json(); }).then(function (data) {
+      remote = data;
+      var log = document.getElementById("thread-log");
+      if (!log || (view !== "messages" && view !== "groups")) return;
+      var nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 48;
+      log.innerHTML = threadHtml();
+      if (nearBottom) log.scrollTop = log.scrollHeight;
+    }).catch(function () {});
   }
 
   function startPeer() {
@@ -308,6 +310,52 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     });
   }
 
+  function fileHtml(file) {
+    if (!file || !file.data) return "";
+    if (String(file.mime || "").indexOf("image/") === 0) return '<img class="preview" alt="' + esc(file.name || "") + '" src="' + esc(file.data) + '">';
+    return '<a class="file-link" download="' + esc(file.name || "file") + '" href="' + esc(file.data) + '">' + esc(file.name || "Файл") + "</a>";
+  }
+  function threadMessages() {
+    if (!openThread) return [];
+    return remote.messages.filter(function (item) {
+      var kind = item.kind || "dm";
+      if (openThread.kind === "group") return kind === "group" && item.toId === openThread.id;
+      var person = me();
+      if (!person) return false;
+      return kind !== "group" && ((item.fromId === person.id && item.toId === openThread.id) || (item.fromId === openThread.id && item.toId === person.id));
+    });
+  }
+  function threadHtml() {
+    var rows = threadMessages();
+    if (!rows.length) return '<p class="note">Диалог открыт. Напишите первое сообщение — переписка останется здесь.</p>';
+    return rows.map(function (item) {
+      return '<article class="bubble dense"><strong>' + esc(item.fromName) + '</strong><p>' + esc(item.text || "") + "</p>" + fileHtml(item.file) + "</article>";
+    }).join("");
+  }
+  function dmPartners() {
+    var person = me();
+    var map = {};
+    if (!person) return [];
+    remote.messages.forEach(function (item) {
+      if ((item.kind || "dm") === "group") return;
+      var other = item.fromId === person.id ? item.toId : item.toId === person.id ? item.fromId : "";
+      if (!other || other === person.id) return;
+      var name = item.fromId === other ? item.fromName : (item.toName || map[other] || "Участник");
+      map[other] = name;
+    });
+    remote.people.forEach(function (item) {
+      if (item.id !== person.id) map[item.id] = item.name;
+    });
+    return Object.keys(map).map(function (id) { return { id: id, name: map[id] }; });
+  }
+  function composer() {
+    if (!me() || !openThread) return '<p class="note">Выберите диалог слева. Он не закроется после ответа.</p>';
+    return '<form id="composer" class="composer dense"><input name="text" type="text" placeholder="Сообщение" autocomplete="off"><label class="clip">&#128206;<input id="file-pick" type="file" accept="image/*,.pdf,.txt"></label><button class="btn" type="submit">Отправить</button></form><p class="note" id="file-hint"></p>';
+  }
+  function chatShell(title, sideButtons) {
+    return '<div class="chat-shell"><aside class="card dense"><h2>' + title + '</h2>' + sideButtons + '</aside><section class="card dense"><h2>' + esc(openThread ? openThread.name : "Диалог") + '</h2><div class="log" id="thread-log">' + threadHtml() + "</div>" + composer() + "</section></div>";
+  }
+
   function ideaCard(idea, mode) {
     var avg = idea.reviews.length ? (idea.reviews.reduce(function (sum, review) { return sum + review.score; }, 0) / idea.reviews.length).toFixed(1) : "—";
     var history = (idea.history || []).map(function (item) {
@@ -322,38 +370,36 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
         return '<button type="button" class="btn ghost" data-score="' + n + '">' + n + "</button>";
       }).join("") + '</div><label>Рецензия, 50–150 символов<textarea data-review="' + idea.id + '"></textarea></label><button type="button" class="btn" data-send-review="' + idea.id + '">Отправить оценку</button>';
     }
-    if (mode === "alt" && me() && me().profession) {
-      actions = '<button type="button" class="btn" data-rescue="' + idea.id + '">Перепроверить и перенести на уровень 2</button>';
-    }
-    if (mode === "level2" && me()) {
-      actions = '<label>Шаг 1<input data-step="0" data-for="' + idea.id + '"></label><label>Шаг 2<input data-step="1" data-for="' + idea.id + '"></label><label>Шаг 3<input data-step="2" data-for="' + idea.id + '"></label><button type="button" class="btn" data-steps="' + idea.id + '">Зафиксировать алгоритм</button>';
-    }
+    if (mode === "alt" && me() && me().profession) actions = '<button type="button" class="btn" data-rescue="' + idea.id + '">Перепроверить и перенести на уровень 2</button>';
+    if (mode === "level2" && me()) actions = '<label>Шаг 1<input data-step="0" data-for="' + idea.id + '"></label><label>Шаг 2<input data-step="1" data-for="' + idea.id + '"></label><label>Шаг 3<input data-step="2" data-for="' + idea.id + '"></label><button type="button" class="btn" data-steps="' + idea.id + '">Зафиксировать алгоритм</button>';
     var steps = mode === "level3" ? "<ol>" + idea.steps.map(function (step) { return "<li>" + esc(step) + "</li>"; }).join("") + "</ol>" : "";
-    return '<article class="card"><p class="kicker">Уровень ' + (idea.level === "lab" ? "лаборатория" : idea.level) + " · оценка " + avg + "</p><h2>" + esc(idea.title) + "</h2><p class=\"muted\">" + esc(idea.authorName) + "</p>" + (idea.badge ? '<p class="badge">🔄 ПРОЕКТ ДОРАБОТАН (Версия 2.0). Пожалуйста, отнеситесь к изменениям серьезно.</p>' : "") + '<p class="serif">' + esc(idea.body) + "</p>" + steps + reviews + '**Summary:** Прошлые версии' + (history || "<p>Прежних версий нет.</p>") + "" + actions + "</article>";
+    return '<article class="card"><p class="kicker">Уровень ' + (idea.level === "lab" ? "лаборатория" : idea.level) + " · оценка " + avg + "</p><h2>" + esc(idea.title) + "</h2><p class=\"muted\">" + esc(idea.authorName) + "</p>" + (idea.badge ? '<p class="badge">ПРОЕКТ ДОРАБОТАН (Версия 2.0). Пожалуйста, отнеситесь к изменениям серьезно.</p>' : "") + '<p class="serif">' + esc(idea.body) + "</p>" + steps + reviews + '**Summary:**
+Прошлые версии' + (history || "<p>Прежних версий нет.</p>") + "" + actions + "</article>";
   }
 
   function paint() {
+    applyLanguage();
     document.querySelectorAll("nav button").forEach(function (button) {
       button.classList.toggle("on", button.getAttribute("data-view") === view);
     });
     var person = me();
+    var pack = LANGUAGES[currentLang] || LANGUAGES.ru;
     var html = "";
     if (view === "home") {
-      html = '<section class="center"><p class="kicker">Глобальный ситуационный центр</p><h1>PLANET REBOOT</h1><p class="muted">Наблюдение. Анализ. Решение.</p></section><article class="card"><h2 class="center">МАНИФЕСТ PLANET REBOOT</h2><p class="serif center">Загрузка манифеста...</p></article>';
+      html = '<section class="center"><p class="kicker">' + esc(pack.kicker) + '</p><h1 class="brand-title">PLANET REBOOT</h1><p class="italic-line">' + esc(pack.italic) + '</p><div class="rule"></div></section>'
+        + '<article class="card"><h2 class="center">МАНИФЕСТ PLANET REBOOT</h2><p class="serif center">' + esc(pack.manifesto) + "</p></article>";
     } else if (view === "feed") {
-      html = '<h1>Лента</h1>' + (person ? '<form class="card" id="post-form"><label>Заголовок<input name="title" required></label><label>Текст<textarea name="body" required></textarea></label><label>Сфера<select name="sphere"><option value="nature">Климат и Природа</option><option value="politics">Политика и Законы</option><option value="economy">Экономика и Кризисы</option></select></label><button class="btn" type="submit">Опубликовать</button></form>' : '<p class="note">Записи добавляет открытый профиль. Сейчас на экране гость.</p>');
+      html = "<h1>Лента</h1>" + (person ? '<form class="card dense" id="post-form"><label>Заголовок<input name="title" required></label><label>Текст<textarea name="body" required></textarea></label><label>Сфера<select name="sphere"><option value="nature">Климат и Природа</option><option value="politics">Политика и Законы</option><option value="economy">Экономика и Кризисы</option></select></label><button class="btn" type="submit">Опубликовать</button></form>' : '<p class="note">Записи добавляет открытый профиль. Сейчас на экране гость.</p>');
       html += remote.posts.length ? '<div class="cols">' + remote.posts.map(function (post) {
-        return '<article class="card"><p class="kicker">' + esc(SPHERES[post.sphere] || post.sphere) + '</p><h2>' + esc(post.title) + '</h2><p class="serif">' + esc(post.body) + '</p><p class="muted">' + esc(post.authorName) + "</p></article>";
+        return '<article class="card"><p class="kicker">' + esc(SPHERES[post.sphere] || post.sphere) + "</p><h2>" + esc(post.title) + '</h2><p class="serif">' + esc(post.body) + '</p><p class="muted">' + esc(post.authorName) + "</p></article>";
       }).join("") + "</div>" : '<p class="card">Лента пуста. Первая запись появится, когда её опубликует человек.</p>';
     } else if (view === "ideas") {
       var tabs = [["level1", "Уровень 1"], ["level2", "Уровень 2"], ["alt", "Альтернативные идеи"], ["level3", "Уровень 3"]];
       html = '<h1>Песочница</h1><div class="row">' + tabs.map(function (tab) {
         return '<button type="button" class="btn ' + (ideaTab === tab[0] ? "" : "ghost") + '" data-tab="' + tab[0] + '">' + tab[1] + "</button>";
       }).join("") + "</div>";
-      if (ideaTab === "level1" && person) {
-        html += '<form class="card" id="idea-form"><h2>Новая идея</h2><label>Заголовок<input name="title" required></label><label>Суть<textarea name="body" required></textarea></label><button class="btn" type="submit">Отдать на уровень 1</button></form>';
-      }
-      var list = remote.ideas.filter(function (idea) {
+      if (ideaTab === "level1" && person) html += '<form class="card dense" id="idea-form"><h2>Новая идея</h2><label>Заголовок<input name="title" required></label><label>Суть<textarea name="body" required></textarea></label><button class="btn" type="submit">Отдать на уровень 1</button></form>';
+     var list = remote.ideas.filter(function (idea) {
         if (ideaTab === "level1") return idea.level === 1;
         if (ideaTab === "level2") return idea.level === 2;
         if (ideaTab === "alt") return idea.level === "lab";
@@ -365,65 +411,64 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
       var mine = person ? remote.ideas.filter(function (idea) { return idea.level === "lab" && idea.authorId === person.id; }) : [];
       html = '<h1>Лаборатория</h1><p class="serif">Идея не набрала порог. Это не приговор. Она лежит здесь: поправьте суть и верните её, когда будете готовы. Прошлую версию можно раскрыть и сравнить.</p>';
       html += mine.length ? mine.map(function (idea) {
-        return ideaCard(idea, "lab") + '<form class="card" data-revise="' + idea.id + '"><label>Новый заголовок<input name="title" value="' + esc(idea.title) + '"></label><label>Новый текст<textarea name="body">' + esc(idea.body) + '</textarea></label><button class="btn" type="submit">Вернуть на уровень 1</button></form>';
+        return ideaCard(idea, "lab") + '<form class="card dense" data-revise="' + idea.id + '"><label>Новый заголовок<input name="title" value="' + esc(idea.title) + '"></label><label>Новый текст<textarea name="body">' + esc(idea.body) + '</textarea></label><button class="btn" type="submit">Вернуть на уровень 1</button></form>';
       }).join("") : '<p class="card">В вашей лаборатории пусто.</p>';
     } else if (view === "groups") {
-      html = '<h1>Группы</h1>' + (person ? '<form class="card" id="group-form"><label>Название<input name="name" required></label><label><input type="checkbox" name="closed" style="width:auto"> Закрытая группа</label><button class="btn" type="submit">Создать</button></form>' : "");
-      html += remote.groups.length ? remote.groups.map(function (group) {
-        return '<article class="card"><h2>' + (group.closed ? "Закрытая · " : "") + esc(group.name) + '</h2><p class="muted">' + esc(group.authorName) + "</p></article>";
-      }).join("") : '<p class="card">Групп пока нет.</p>';
-      html += '<section class="card"><h2>Кто сейчас здесь</h2>';
+      if (openThread && openThread.kind !== "group") openThread = null;
+      var groupButtons = remote.groups.map(function (group) {
+        return '<button type="button" class="btn ghost" data-open-group="' + esc(group.id) + '" data-open-name="' + esc(group.name) + '">' + (group.closed ? "Закрытая · " : "") + esc(group.name) + "</button>";
+      }).join("");
+      html = "<h1>Группы</h1>" + (person ? '<form class="card dense" id="group-form"><label>Название<input name="name" required></label><label><input type="checkbox" name="closed" style="width:auto"> Закрытая группа</label><button class="btn" type="submit">Создать</button></form>' : "");
+      html += remote.groups.length ? chatShell("Комнаты", groupButtons || '<p class="note">Групп пока нет.</p>') : '<p class="card">Групп пока нет.</p>';
       var others = remote.people.filter(function (item) { return !person || item.id !== person.id; });
-      html += others.length ? others.map(function (item) {
-        return '<div class="person"><span class="avatar">' + esc(item.name.slice(0, 1)) + '</span><span>' + esc(item.name) + '<br><span class="note">' + esc(item.profession || "профессия не указана") + '</span></span><button type="button" class="btn" data-dial="' + esc(item.peerId) + '">Вызвать</button></div>';
-      }).join("") : '<p>Сейчас никого больше нет. Когда кто-то откроет свой профиль, у его имени появится кнопка «Вызвать».</p>';
-      html += "</section>";
+      html += '<section class="card dense"><h2>Кто сейчас здесь</h2>' + (others.length ? others.map(function (item) {
+        return '<div class="person"><span class="avatar">' + esc(item.name.slice(0, 1)) + "</span><span>" + esc(item.name) + '<br><span class="note">' + esc(item.profession || "профессия не указана") + '</span></span><button type="button" class="btn" data-dial="' + esc(item.peerId) + '">Вызвать</button></div>';
+      }).join("") : "<p>Сейчас никого больше нет.</p>") + "</section>";
     } else if (view === "messages") {
-      html = '<h1>Сообщения</h1>';
-      if (person) {
-        var options = remote.people.filter(function (item) { return item.id !== person.id; }).map(function (item) {
-          return '<option value="' + esc(item.id) + '">' + esc(item.name) + "</option>";
-        }).join("");
-        html += options ? '<form class="card" id="message-form"><label>Кому<select name="toId">' + options + '</select></label><label>Текст<input name="text" required></label><button class="btn" type="submit">Отправить</button></form>' : '<p class="note">Писать пока некому: других открытых профилей нет.</p>';
-      } else html += '<p class="note">Гость читает, но не отправляет.</p>';
-      var visible = remote.messages.filter(function (item) {
-        return person && (item.fromId === person.id || item.toId === person.id);
-      });
-      html += visible.length ? visible.map(function (item) {
-        return '<p class="card"><strong>' + esc(item.fromName) + "</strong><br>" + esc(item.text) + "</p>";
-      }).join("") : '<p class="card">Сообщений нет.</p>';
+      if (openThread && openThread.kind !== "dm") openThread = null;
+      var partners = dmPartners();
+      var side = partners.length ? partners.map(function (item) {
+        return '<button type="button" class="btn ghost" data-open-dm="' + esc(item.id) + '" data-open-name="' + esc(item.name) + '">' + esc(item.name) + "</button>";
+      }).join("") : '<p class="note">Пока нет диалогов. Они появятся, когда кто-то будет в сети или напишет вам.</p>';
+      html = "<h1>Сообщения</h1>" + chatShell("Диалоги", side);
+      if (!person) html += '<p class="note">Гость читает открытый диалог, но не отправляет.</p>';
     } else if (view === "fund") {
       html = '<h1>Фонд</h1><p style="font-size:clamp(2rem,6vw,3rem);color:var(--primary);margin:0">' + money(remote.fund) + '</p><p class="note">Сумма собрана из записей на сервере. Это не платёж и не банк: деньги никуда не уходят.</p>';
-      html += person ? '<form class="card" id="gift-form"><label>Сумма, $<input name="amount" inputmode="decimal" required></label><label>На что<input name="note"></label><button class="btn" type="submit">Записать поддержку</button></form>' : "";
+      html += person ? '<form class="card dense" id="gift-form"><label>Сумма, $<input name="amount" inputmode="decimal" required></label><label>На что<input name="note"></label><button class="btn" type="submit">Записать поддержку</button></form>' : "";
       html += remote.gifts.length ? remote.gifts.map(function (gift) {
         return '<p class="card">' + esc(gift.authorName) + " записал " + money(gift.amount) + (gift.note ? " · " + esc(gift.note) : "") + "</p>";
       }).join("") : '<p class="card">Записей поддержки пока нет.</p>';
     } else if (view === "profile") {
       var saved = profile();
-      if (!saved) {
-        html = '<h1>Профиль</h1><form class="card" id="profile-form"><label>Имя<input name="name" required></label><label>Профессия<input name="profession" required></label><label>PIN из 4 цифр<input name="pin" inputmode="numeric" pattern="[0-9]{4}" required></label><button class="btn" type="submit">Сохранить на этом устройстве</button><p class="note">Почта не нужна. PIN остаётся только в этом браузере.</p></form>';
-      } else if (locked()) {
-        html = '<h1>Гость</h1><form class="card" id="unlock-form"><label>PIN<input name="pin" inputmode="numeric" required></label><button class="btn" type="submit">Открыть профиль</button></form>';
-      } else {
-        html = '<h1>' + esc(saved.name) + '</h1><p>' + esc(saved.profession) + '</p><p class="note">Профиль открыт на этом устройстве. Документы не проверяются.</p>';
-      }
+      if (!saved) html = '<h1>Профиль</h1><form class="card dense" id="profile-form"><label>Имя<input name="name" required></label><label>Профессия<input name="profession" required></label><label>PIN из 4 цифр<input name="pin" inputmode="numeric" pattern="[0-9]{4}" required></label><button class="btn" type="submit">Сохранить на этом устройстве</button><p class="note">Почта не нужна. PIN остаётся только в этом браузере.</p></form>';
+      else if (locked()) html = '<h1>Гость</h1><form class="card dense" id="unlock-form"><label>PIN<input name="pin" inputmode="numeric" required></label><button class="btn" type="submit">Открыть профиль</button></form>';
+      else html = "<h1>" + esc(saved.name) + "</h1><p>" + esc(saved.profession) + '</p><p class="note">Профиль открыт на этом устройстве. Документы не проверяются.</p>';
     } else if (view === "admin") {
       html = owner() ? '<h1>Пульт</h1><p class="note">Кнопка видна только в этом браузере. Ключ записан в файле страницы, это не серверный замок.</p><button type="button" class="btn" id="leave-owner">Выйти из режима Хозяина</button>' : '<p class="card">Пульт закрыт.</p>';
     }
     document.getElementById("app").innerHTML = html;
-    applyLang();
+    var log = document.getElementById("thread-log");
+    if (log) log.scrollTop = log.scrollHeight;
   }
 
   document.body.addEventListener("click", function (ev) {
     var button = ev.target.closest("[data-view]");
-    if (button) {
+    if (button && button.id !== "secret-admin-btn") {
       view = button.getAttribute("data-view");
-      if (view === "admin" && !owner()) view = "home";
+      pull();
+      return;
+    }
+    if (button && button.id === "secret-admin-btn") {
+      view = owner() ? "admin" : "home";
       pull();
       return;
     }
     var tab = ev.target.closest("[data-tab]");
     if (tab) { ideaTab = tab.getAttribute("data-tab"); paint(); return; }
+    var dm = ev.target.closest("[data-open-dm]");
+    if (dm) { openThread = { kind: "dm", id: dm.getAttribute("data-open-dm"), name: dm.getAttribute("data-open-name") }; pendingFile = null; paint(); return; }
+    var room = ev.target.closest("[data-open-group]");
+    if (room) { openThread = { kind: "group", id: room.getAttribute("data-open-group"), name: room.getAttribute("data-open-name") }; pendingFile = null; paint(); return; }
     var scoreButton = ev.target.closest("[data-score]");
     if (scoreButton) {
       score = Number(scoreButton.getAttribute("data-score"));
@@ -459,6 +504,20 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     if (ev.target.id === "leave-owner") leaveOwner();
   });
 
+  document.body.addEventListener("change", function (ev) {
+    if (ev.target.id !== "file-pick") return;
+    var file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    if (file.size > 7 * 1024 * 1024) { window.alert("Файл больше 7 МБ."); ev.target.value = ""; return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      pendingFile = { name: file.name, mime: file.type || "application/octet-stream", data: String(reader.result || "") };
+      var hint = document.getElementById("file-hint");
+      if (hint) hint.textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  });
+
   document.body.addEventListener("submit", function (ev) {
     var form = ev.target;
     if (!(form instanceof HTMLFormElement)) return;
@@ -491,25 +550,32 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     if (!person) return;
     if (form.id === "post-form") send("/api/posts", { title: data.get("title"), body: data.get("body"), sphere: data.get("sphere"), authorName: person.name }).then(pull);
     if (form.id === "idea-form") send("/api/ideas", { authorId: person.id, authorName: person.name, title: data.get("title"), body: data.get("body") }).then(pull);
-    if (form.id === "group-form") send("/api/groups", { name: data.get("name"), closed: data.get("closed") === "on", authorName: person.name }).then(pull);
-    if (form.id === "message-form") send("/api/messages", { fromId: person.id, fromName: person.name, toId: data.get("toId"), text: data.get("text") }).then(function (result) {
-      if (!result.ok) window.alert(result.data.error || "Сообщение не ушло.");
-      pull();
-    });
+    if (form.id === "group-form") send("/api/groups", { name: data.get("name"), closed: data.get("closed") === "on", authorName: person.name, authorId: person.id }).then(pull);
     if (form.id === "gift-form") send("/api/gifts", { authorName: person.name, amount: data.get("amount"), note: data.get("note") }).then(function (result) {
       if (!result.ok) window.alert(result.data.error || "Запись не сохранена.");
       pull();
     });
+    if (form.id === "composer") {
+      if (!openThread) return;
+      var payload = { fromId: person.id, fromName: person.name, toId: openThread.id, toName: openThread.name, kind: openThread.kind, text: String(data.get("text") || "").trim() };
+      if (pendingFile) payload.file = pendingFile;
+      send("/api/messages", payload).then(function (result) {
+        if (!result.ok) { window.alert(result.data.error || "Сообщение не ушло."); return; }
+        pendingFile = null;
+        var box = form.querySelector("input[name=text]");
+        if (box) box.value = "";
+        var hint = document.getElementById("file-hint");
+        if (hint) hint.textContent = "";
+        refreshChat();
+      });
+    }
   });
 
-  document.querySelectorAll(".lang-btn").forEach(function(btn) {
-    btn.addEventListener("click", function() {
-      currentLang = btn.getAttribute("data-lang");
-      localStorage.setItem("planet_lang", currentLang);
-      applyLang();
-    });
+  document.getElementById("lang-selector").addEventListener("change", function () {
+    currentLang = LANGUAGES[this.value] ? this.value : "ru";
+    try { localStorage.setItem("planet_lang", currentLang); } catch (error) {}
+    paint();
   });
-
   document.getElementById("lock-btn").addEventListener("click", function () {
     if (!profile()) { window.alert("Сначала создайте профиль и PIN."); return; }
     localStorage.setItem(LOCK_KEY, "true");
@@ -549,6 +615,7 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
   showAdmin(owner());
   startPeer();
   setInterval(beat, 25000);
+  setInterval(refreshChat, 3000);
   pull();
 })();
 </script>
