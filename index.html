@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
@@ -26,6 +26,9 @@ nav button.on{color:var(--primary)}
 #secret-admin-btn.owner{background:var(--primary);color:var(--ink)}
 main{max-width:1100px;margin:0 auto;padding:28px 16px 96px}
 h1{font-weight:500;letter-spacing:.08em;font-size:clamp(2rem,6vw,3.2rem);margin:12px 0}
+h1.hero-title{font-size:clamp(2rem,6vw,3.2rem);margin:8px 0}
+.hero-kicker,.hero-sub{font-size:clamp(1rem,3vw,1.6rem);margin:0;letter-spacing:.08em}
+.hero-kicker{color:#2fbf9a;text-transform:uppercase}
 h2{font-weight:500;font-size:1.3rem;margin:0}
 .kicker{color:var(--primary);letter-spacing:.16em;text-transform:uppercase;font-size:.75rem}
 .muted{color:var(--muted)}
@@ -39,7 +42,7 @@ label{display:block;margin-top:12px;color:var(--muted);font-size:.9rem}
 input,textarea,select{width:100%;margin-top:6px;min-height:48px;background:var(--bg);border:1px solid var(--border);padding:8px 12px}
 textarea{min-height:96px;resize:vertical}
 .cols{display:grid;gap:12px}
-@media(min-width:900px){.cols{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:900px){.cols{grid-template-columns:repeat(3,1fr)}.chat-shell{grid-template-columns:240px 1fr}}
 .decision{border:4px solid var(--primary);padding:14px;margin-top:14px;background:var(--bg)}
 .person{display:flex;align-items:center;gap:10px;margin-top:10px}
 .avatar{width:44px;height:44px;border:1px solid var(--border);display:grid;place-items:center;color:var(--primary)}
@@ -55,6 +58,14 @@ textarea{min-height:96px;resize:vertical}
 .call-stage{display:grid;grid-template-columns:1fr 1fr;height:min(70vh,560px);background:#02080c}
 video.cam{width:100%;height:100%;object-fit:contain !important;object-position:center center;background:#02080c}
 .note{color:var(--muted);font-size:.8rem}
+.chat-shell{display:grid;gap:12px;margin-top:16px}
+.log{min-height:220px;max-height:46vh;overflow:auto}
+.preview{display:block;max-width:280px;max-height:200px;margin-top:8px;background:#02080c;object-fit:contain}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.clip{margin:0;min-height:48px;min-width:48px;display:grid;place-items:center;border:1px solid var(--border);cursor:pointer}
+.clip input{display:none}
+.composer{display:flex;gap:8px;align-items:center;margin-top:12px}
+.composer input[type="text"]{flex:1;width:auto;margin:0}
 </style>
 </head>
 <body>
@@ -126,7 +137,7 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
   var OWNER_KEY = "site_owner_access";
   var SECRET = "putsa";
   var SPHERES = { nature: "Климат и Природа", politics: "Политика и Законы", economy: "Экономика и Кризисы" };
-  var remote = { posts: [], groups: [], messages: [], ideas: [], gifts: [], people: [], fund: 0 };
+  var remote = { posts: [], groups: [], messages: [], ideas: [], gifts: [], people: [], fund: 0, trash: [] };
   var view = "home";
   var ideaTab = "level1";
   var score = 0;
@@ -137,6 +148,10 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
   var pendingCall = null;
   var typed = "";
   var taps = [];
+  var openThread = null;
+  var pendingFile = null;
+  var feedMode = "all";
+  var showTrash = false;
 
   function applyLanguage() {
     var pack = LANGUAGES[currentLang] || LANGUAGES.ru;
@@ -174,6 +189,10 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
   function money(value) {
     return "$" + Number(value || 0).toLocaleString("en-US");
   }
+  function follows() {
+    try { return JSON.parse(localStorage.getItem("planet_follows") || "[]"); }
+    catch (error) { return []; }
+  }
   function showAdmin(on) {
     var button = document.getElementById("secret-admin-btn");
     if (!button) return;
@@ -197,13 +216,32 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     showAdmin(false);
     if (view === "admin") { view = "home"; paint(); }
   }
-
+  function lists() {
+    remote.posts = Array.isArray(remote.posts) ? remote.posts : [];
+    remote.groups = Array.isArray(remote.groups) ? remote.groups : [];
+    remote.messages = Array.isArray(remote.messages) ? remote.messages : [];
+    remote.ideas = Array.isArray(remote.ideas) ? remote.ideas : [];
+    remote.gifts = Array.isArray(remote.gifts) ? remote.gifts : [];
+    remote.people = Array.isArray(remote.people) ? remote.people : [];
+    remote.trash = Array.isArray(remote.trash) ? remote.trash : [];
+  }
   function pull() {
     return fetch("/api/state").then(function (res) { return res.json(); }).then(function (data) {
-      remote = data;
+      data = data || {};
+      remote = {
+        posts: Array.isArray(data.posts) ? data.posts : [],
+        groups: Array.isArray(data.groups) ? data.groups : [],
+        messages: Array.isArray(data.messages) ? data.messages : [],
+        ideas: Array.isArray(data.ideas) ? data.ideas : [],
+        gifts: Array.isArray(data.gifts) ? data.gifts : [],
+        people: Array.isArray(data.people) ? data.people : [],
+        trash: Array.isArray(data.trash) ? data.trash : [],
+        fund: Number(data.fund) || 0
+      };
       paint();
     }).catch(function () {
-      document.getElementById("app").innerHTML = '<p class="card">Сервер не ответил. Обновите страницу.</p>';
+      var app = document.getElementById("app");
+      if (app && !app.innerHTML) app.innerHTML = '<p class="card">Сервер не ответил. Обновите страницу.</p>';
     });
   }
   function send(url, body) {
@@ -217,6 +255,26 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     var person = me();
     if (!person || !peerId) return;
     send("/api/presence", { id: person.id, name: person.name, profession: person.profession, peerId: peerId });
+  }
+  function refreshQuiet() {
+    var typing = document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA");
+    fetch("/api/state").then(function (res) { return res.json(); }).then(function (data) {
+      data = data || {};
+      remote.posts = Array.isArray(data.posts) ? data.posts : [];
+      remote.groups = Array.isArray(data.groups) ? data.groups : [];
+      remote.messages = Array.isArray(data.messages) ? data.messages : [];
+      remote.people = Array.isArray(data.people) ? data.people : [];
+      remote.trash = Array.isArray(data.trash) ? data.trash : [];
+      remote.ideas = Array.isArray(data.ideas) ? data.ideas : remote.ideas;
+      remote.gifts = Array.isArray(data.gifts) ? data.gifts : remote.gifts;
+      remote.fund = Number(data.fund) || 0;
+      var log = document.getElementById("thread-log");
+      if (log && (view === "messages" || view === "groups")) {
+        log.innerHTML = threadHtml();
+        return;
+      }
+      if (view === "feed" && !typing) paint();
+    }).catch(function () {});
   }
 
   function startPeer() {
@@ -285,12 +343,67 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     });
   }
 
+  function mediaHtml(file) {
+    if (!file || !file.data) return "";
+    var mime = String(file.mime || "");
+    if (mime.indexOf("video/") === 0) return '<video class="preview" controls playsinline src="' + esc(file.data) + '"></video>';
+    if (mime.indexOf("image/") === 0) return '<img class="preview" alt="" src="' + esc(file.data) + '">';
+    return '<a download="' + esc(file.name || "file") + '" href="' + esc(file.data) + '">' + esc(file.name || "Файл") + "</a>";
+  }
+  function attachTools() {
+    var name = pendingFile ? esc(pendingFile.name) : "файл не выбран";
+    return '<div class="tools"><label class="clip" title="Видео">&#127909;<input type="file" accept="video/*" data-pick="video"></label><label class="clip" title="Файл">&#128206;<input type="file" data-pick="file"></label><button type="button" class="btn ghost" data-clear-file="1">Корзина</button><span class="note">' + name + "</span></div>";
+  }
+  function threadMessages() {
+    if (!openThread) return [];
+    return remote.messages.filter(function (item) {
+      var kind = item.kind || "dm";
+      if (openThread.kind === "group") return kind === "group" && item.toId === openThread.id;
+      var person = me();
+      if (!person) return false;
+      return kind !== "group" && ((item.fromId === person.id && item.toId === openThread.id) || (item.fromId === openThread.id && item.toId === person.id));
+    });
+  }
+  function threadHtml() {
+    var person = me();
+    var rows = threadMessages();
+    if (!rows.length) return '<p class="note">Диалог открыт. Его можно продолжать, даже если собеседник вышел.</p>';
+    return rows.map(function (item) {
+      var bin = person && item.fromId === person.id ? '<button type="button" class="btn ghost" data-bin-message="' + esc(item.id) + '">Корзина</button>' : "";
+      return '<article class="card"><strong>' + esc(item.fromName) + "</strong><p>" + esc(item.text || "") + "</p>" + mediaHtml(item.file) + bin + "</article>";
+    }).join("");
+  }
+  function dmPartners() {
+    var person = me();
+    var map = {};
+    if (!person) return [];
+    remote.messages.forEach(function (item) {
+      if ((item.kind || "dm") === "group") return;
+      var other = item.fromId === person.id ? item.toId : item.toId === person.id ? item.fromId : "";
+      if (!other || other === person.id) return;
+      map[other] = item.fromId === other ? item.fromName : (item.toName || map[other] || "Участник");
+    });
+    remote.people.forEach(function (item) {
+      if (item.id !== person.id) map[item.id] = item.name;
+    });
+    return Object.keys(map).map(function (id) { return { id: id, name: map[id] }; });
+  }
+  function composer() {
+    if (!me() || !openThread) return '<p class="note">Выберите диалог слева. Он останется открытым после ответа.</p>';
+    return '<form id="composer"><input name="text" type="text" placeholder="Текст сообщения" autocomplete="off">' + attachTools() + '<button class="btn" type="submit">Отправить</button></form>';
+  }
+  function chatShell(title, side) {
+    return '<div class="chat-shell"><aside class="card"><h2>' + title + "</h2>" + side + '</aside><section class="card"><h2>' + esc(openThread ? openThread.name : "Диалог") + '</h2><div class="log" id="thread-log">' + threadHtml() + "</div>" + composer() + "</section></div>";
+  }
   function ideaCard(idea, mode) {
-    var avg = idea.reviews.length ? (idea.reviews.reduce(function (sum, review) { return sum + review.score; }, 0) / idea.reviews.length).toFixed(1) : "—";
-    var history = (idea.history || []).map(function (item) {
+    var reviewsList = idea.reviews || [];
+    var stepsList = idea.steps || [];
+    var historyList = idea.history || [];
+    var avg = reviewsList.length ? (reviewsList.reduce(function (sum, review) { return sum + review.score; }, 0) / reviewsList.length).toFixed(1) : "—";
+    var history = historyList.map(function (item) {
       return "<p><strong>Версия " + item.version + ".</strong> " + esc(item.title) + "<br>" + esc(item.body) + "</p>";
     }).join("");
-    var reviews = mode === "level3" ? "" : idea.reviews.map(function (review) {
+    var reviews = mode === "level3" ? "" : reviewsList.map(function (review) {
       return "<p><strong>" + review.score + "/10 · " + esc(review.authorName) + "</strong><br>" + esc(review.text) + "</p>";
     }).join("");
     var actions = "";
@@ -299,41 +412,47 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
         return '<button type="button" class="btn ghost" data-score="' + n + '">' + n + "</button>";
       }).join("") + '</div><label>Рецензия, 50–150 символов<textarea data-review="' + idea.id + '"></textarea></label><button type="button" class="btn" data-send-review="' + idea.id + '">Отправить оценку</button>';
     }
-    if (mode === "alt" && me() && me().profession) {
-      actions = '<button type="button" class="btn" data-rescue="' + idea.id + '">Перепроверить и перенести на уровень 2</button>';
-    }
-    if (mode === "level2" && me()) {
-      actions = '<label>Шаг 1<input data-step="0" data-for="' + idea.id + '"></label><label>Шаг 2<input data-step="1" data-for="' + idea.id + '"></label><label>Шаг 3<input data-step="2" data-for="' + idea.id + '"></label><button type="button" class="btn" data-steps="' + idea.id + '">Зафиксировать алгоритм</button>';
-    }
-    var steps = mode === "level3" ? "<ol>" + idea.steps.map(function (step) { return "<li>" + esc(step) + "</li>"; }).join("") + "</ol>" : "";
-    return '<article class="card"><p class="kicker">Уровень ' + (idea.level === "lab" ? "лаборатория" : idea.level) + " · оценка " + avg + "</p><h2>" + esc(idea.title) + "</h2><p class=\"muted\">" + esc(idea.authorName) + "</p>" + (idea.badge ? '<p class="badge">🔄 ПРОЕКТ ДОРАБОТАН (Версия 2.0). Пожалуйста, отнеситесь к изменениям серьезно.</p>' : "") + '<p class="serif">' + esc(idea.body) + "</p>" + steps + reviews + '**Summary:**
-Прошлые версии' + (history || "<p>Прежних версий нет.</p>") + "" + actions + "</article>";
+    if (mode === "alt" && me() && me().profession) actions = '<button type="button" class="btn" data-rescue="' + idea.id + '">Перепроверить и перенести на уровень 2</button>';
+    if (mode === "level2" && me()) actions = '<label>Шаг 1<input data-step="0" data-for="' + idea.id + '"></label><label>Шаг 2<input data-step="1" data-for="' + idea.id + '"></label><label>Шаг 3<input data-step="2" data-for="' + idea.id + '"></label><button type="button" class="btn" data-steps="' + idea.id + '">Зафиксировать алгоритм</button>';
+    var steps = mode === "level3" ? "<ol>" + stepsList.map(function (step) { return "<li>" + esc(step) + "</li>"; }).join("") + "</ol>" : "";
+    return '<article class="card"><p class="kicker">Уровень ' + (idea.level === "lab" ? "лаборатория" : idea.level) + " · оценка " + avg + "</p><h2>" + esc(idea.title) + '</h2><p class="muted">' + esc(idea.authorName) + "</p>" + (idea.badge ? '<p class="badge">ПРОЕКТ ДОРАБОТАН (Версия 2.0). Пожалуйста, отнеситесь к изменениям серьезно.</p>' : "") + '<p class="serif">' + esc(idea.body) + "</p>" + steps + reviews + "**Summary:**
+Прошлые версии" + (history || "<p>Прежних версий нет.</p>") + "" + actions + "</article>";
   }
 
   function paint() {
+    lists();
     applyLanguage();
     document.querySelectorAll("nav button").forEach(function (button) {
       button.classList.toggle("on", button.getAttribute("data-view") === view);
     });
     var person = me();
+    var pack = LANGUAGES[currentLang] || LANGUAGES.ru;
     var html = "";
     if (view === "home") {
-      var pack = LANGUAGES[currentLang] || LANGUAGES.ru;
-      html = '<section class="center"><p class="kicker">Глобальный ситуационный центр</p><h1>PLANET REBOOT</h1><p class="muted">Наблюдение. Анализ. Решение.</p></section>'
-        + '<article class="card"><h2 class="center">МАНИФЕСТ PLANET REBOOT</h2><p class="serif center">' + esc(pack.manifesto) + '</p></article>';
+      html = '<section class="center"><p class="hero-kicker">ситуационный центр,</p><h1 class="hero-title">PLANET REBOOT.</h1><p class="hero-sub">территория суверенного разума</p></section>'
+        + '<article class="card"><h2 class="center">МАНИФЕСТ PLANET REBOOT</h2><p class="serif center">' + esc(pack.manifesto) + "</p></article>";
     } else if (view === "feed") {
-      html = '<h1>Лента</h1>' + (person ? '<form class="card" id="post-form"><label>Заголовок<input name="title" required></label><label>Текст<textarea name="body" required></textarea></label><label>Сфера<select name="sphere"><option value="nature">Климат и Природа</option><option value="politics">Политика и Законы</option><option value="economy">Экономика и Кризисы</option></select></label><button class="btn" type="submit">Опубликовать</button></form>' : '<p class="note">Записи добавляет открытый профиль. Сейчас на экране гость.</p>');
-      html += remote.posts.length ? '<div class="cols">' + remote.posts.map(function (post) {
-        return '<article class="card"><p class="kicker">' + esc(SPHERES[post.sphere] || post.sphere) + '</p><h2>' + esc(post.title) + '</h2><p class="serif">' + esc(post.body) + '</p><p class="muted">' + esc(post.authorName) + "</p></article>";
+      var watched = follows();
+      var posts = feedMode === "mine" ? remote.posts.filter(function (post) { return watched.indexOf(post.id) >= 0; }) : remote.posts;
+      html = "<h1>Лента</h1><div class=\"row\"><button type=\"button\" class=\"btn " + (feedMode === "all" ? "" : "ghost") + "\" data-feed=\"all\">Вся лента</button><button type=\"button\" class=\"btn " + (feedMode === "mine" ? "" : "ghost") + "\" data-feed=\"mine\">Я слежу</button><button type=\"button\" class=\"btn ghost\" data-trash-toggle=\"1\">Корзина</button></div>";
+      html += person ? '<form class="card" id="post-form"><label>Заголовок<input name="title" required></label><label>Текст<textarea name="body" required></textarea></label><label>Сфера<select name="sphere"><option value="nature">Климат и Природа</option><option value="politics">Политика и Законы</option><option value="economy">Экономика и Кризисы</option></select></label>' + attachTools() + '<button class="btn" type="submit">Опубликовать</button><p class="note">Видео, фото и файлы до 7 МБ. Корзина снимает вложение до отправки.</p></form>' : '<p class="note">Записи добавляет открытый профиль. Сейчас на экране гость.</p>';
+      html += posts.length ? '<div class="cols">' + posts.map(function (post) {
+        var on = watched.indexOf(post.id) >= 0;
+        var bin = person && (post.authorId === person.id || post.authorName === person.name) ? '<button type="button" class="btn ghost" data-bin-post="' + esc(post.id) + '">Корзина</button>' : "";
+        return '<article class="card"><p class="kicker">' + esc(SPHERES[post.sphere] || post.sphere) + "</p><h2>" + esc(post.title) + '</h2><p class="serif">' + esc(post.body) + "</p>" + mediaHtml(post.file) + '<p class="muted">' + esc(post.authorName) + '</p><button type="button" class="btn ghost" data-follow="' + esc(post.id) + '">' + (on ? "Не следить" : "Следить") + "</button>" + bin + "</article>";
       }).join("") + "</div>" : '<p class="card">Лента пуста. Первая запись появится, когда её опубликует человек.</p>';
+      if (showTrash) {
+        html += "<h2>Корзина</h2>" + (remote.trash.length ? remote.trash.map(function (row) {
+          var label = row.kind === "post" ? (row.item && row.item.title) : (row.item && row.item.text);
+          return '<p class="card">' + esc(row.kind) + " · " + esc(label || "без текста") + '<br><button type="button" class="btn" data-restore="' + esc(row.id) + '">Вернуть</button></p>';
+        }).join("") : '<p class="card">Корзина пуста.</p>');
+      }
     } else if (view === "ideas") {
       var tabs = [["level1", "Уровень 1"], ["level2", "Уровень 2"], ["alt", "Альтернативные идеи"], ["level3", "Уровень 3"]];
       html = '<h1>Песочница</h1><div class="row">' + tabs.map(function (tab) {
         return '<button type="button" class="btn ' + (ideaTab === tab[0] ? "" : "ghost") + '" data-tab="' + tab[0] + '">' + tab[1] + "</button>";
       }).join("") + "</div>";
-      if (ideaTab === "level1" && person) {
-        html += '<form class="card" id="idea-form"><h2>Новая идея</h2><label>Заголовок<input name="title" required></label><label>Суть<textarea name="body" required></textarea></label><button class="btn" type="submit">Отдать на уровень 1</button></form>';
-      }
+      if (ideaTab === "level1" && person) html += '<form class="card" id="idea-form"><h2>Новая идея</h2><label>Заголовок<input name="title" required></label><label>Суть<textarea name="body" required></textarea></label><button class="btn" type="submit">Отдать на уровень 1</button></form>';
       var list = remote.ideas.filter(function (idea) {
         if (ideaTab === "level1") return idea.level === 1;
         if (ideaTab === "level2") return idea.level === 2;
@@ -349,30 +468,23 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
         return ideaCard(idea, "lab") + '<form class="card" data-revise="' + idea.id + '"><label>Новый заголовок<input name="title" value="' + esc(idea.title) + '"></label><label>Новый текст<textarea name="body">' + esc(idea.body) + '</textarea></label><button class="btn" type="submit">Вернуть на уровень 1</button></form>';
       }).join("") : '<p class="card">В вашей лаборатории пусто.</p>';
     } else if (view === "groups") {
-      html = '<h1>Группы</h1>' + (person ? '<form class="card" id="group-form"><label>Название<input name="name" required></label><label><input type="checkbox" name="closed" style="width:auto"> Закрытая группа</label><button class="btn" type="submit">Создать</button></form>' : "");
-      html += remote.groups.length ? remote.groups.map(function (group) {
-        return '<article class="card"><h2>' + (group.closed ? "Закрытая · " : "") + esc(group.name) + '</h2><p class="muted">' + esc(group.authorName) + "</p></article>";
-      }).join("") : '<p class="card">Групп пока нет.</p>';
-      html += '<section class="card"><h2>Кто сейчас здесь</h2>';
+      if (openThread && openThread.kind !== "group") openThread = null;
+      var groupButtons = remote.groups.map(function (group) {
+        return '<button type="button" class="btn ghost" data-open-group="' + esc(group.id) + '" data-open-name="' + esc(group.name) + '">' + (group.closed ? "Закрытая · " : "") + esc(group.name) + "</button>";
+      }).join("");
+      html = "<h1>Группы</h1>" + (person ? '<form class="card" id="group-form"><label>Название<input name="name" required></label><label><input type="checkbox" name="closed" style="width:auto"> Закрытая группа</label><button class="btn" type="submit">Создать</button></form>' : "");
+      html += remote.groups.length ? chatShell("Комнаты", groupButtons) : '<p class="card">Групп пока нет.</p>';
       var others = remote.people.filter(function (item) { return !person || item.id !== person.id; });
-      html += others.length ? others.map(function (item) {
-        return '<div class="person"><span class="avatar">' + esc(item.name.slice(0, 1)) + '</span><span>' + esc(item.name) + '<br><span class="note">' + esc(item.profession || "профессия не указана") + '</span></span><button type="button" class="btn" data-dial="' + esc(item.peerId) + '">Вызвать</button></div>';
-      }).join("") : '<p>Сейчас никого больше нет. Когда кто-то откроет свой профиль, у его имени появится кнопка «Вызвать».</p>';
-      html += "</section>";
+      html += '<section class="card"><h2>Кто сейчас здесь</h2>' + (others.length ? others.map(function (item) {
+        return '<div class="person"><span class="avatar">' + esc(item.name.slice(0, 1)) + "</span><span>" + esc(item.name) + '<br><span class="note">' + esc(item.profession || "профессия не указана") + '</span></span><button type="button" class="btn" data-dial="' + esc(item.peerId) + '">Вызвать</button></div>';
+      }).join("") : "<p>Сейчас никого больше нет. Когда кто-то откроет свой профиль, у его имени появится кнопка «Вызвать».</p>") + "</section>";
     } else if (view === "messages") {
-      html = '<h1>Сообщения</h1>';
-      if (person) {
-        var options = remote.people.filter(function (item) { return item.id !== person.id; }).map(function (item) {
-          return '<option value="' + esc(item.id) + '">' + esc(item.name) + "</option>";
-        }).join("");
-        html += options ? '<form class="card" id="message-form"><label>Кому<select name="toId">' + options + '</select></label><label>Текст<input name="text" required></label><button class="btn" type="submit">Отправить</button></form>' : '<p class="note">Писать пока некому: других открытых профилей нет.</p>';
-      } else html += '<p class="note">Гость читает, но не отправляет.</p>';
-      var visible = remote.messages.filter(function (item) {
-        return person && (item.fromId === person.id || item.toId === person.id);
-      });
-      html += visible.length ? visible.map(function (item) {
-        return '<p class="card"><strong>' + esc(item.fromName) + "</strong><br>" + esc(item.text) + "</p>";
-      }).join("") : '<p class="card">Сообщений нет.</p>';
+      if (openThread && openThread.kind !== "dm") openThread = null;
+      var partners = dmPartners();
+      var side = partners.length ? partners.map(function (item) {
+        return '<button type="button" class="btn ghost" data-open-dm="' + esc(item.id) + '" data-open-name="' + esc(item.name) + '">' + esc(item.name) + "</button>";
+      }).join("") : '<p class="note">Диалоги появятся, когда кто-то будет в сети или вам напишет. После ответа чат не закрывается.</p>';
+      html = "<h1>Сообщения</h1>" + chatShell("Диалоги", side);
     } else if (view === "fund") {
       html = '<h1>Фонд</h1><p style="font-size:clamp(2rem,6vw,3rem);color:var(--primary);margin:0">' + money(remote.fund) + '</p><p class="note">Сумма собрана из записей на сервере. Это не платёж и не банк: деньги никуда не уходят.</p>';
       html += person ? '<form class="card" id="gift-form"><label>Сумма, $<input name="amount" inputmode="decimal" required></label><label>На что<input name="note"></label><button class="btn" type="submit">Записать поддержку</button></form>' : "";
@@ -381,13 +493,9 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
       }).join("") : '<p class="card">Записей поддержки пока нет.</p>';
     } else if (view === "profile") {
       var saved = profile();
-      if (!saved) {
-        html = '<h1>Профиль</h1><form class="card" id="profile-form"><label>Имя<input name="name" required></label><label>Профессия<input name="profession" required></label><label>PIN из 4 цифр<input name="pin" inputmode="numeric" pattern="[0-9]{4}" required></label><button class="btn" type="submit">Сохранить на этом устройстве</button><p class="note">Почта не нужна. PIN остаётся только в этом браузере.</p></form>';
-      } else if (locked()) {
-        html = '<h1>Гость</h1><form class="card" id="unlock-form"><label>PIN<input name="pin" inputmode="numeric" required></label><button class="btn" type="submit">Открыть профиль</button></form>';
-      } else {
-        html = '<h1>' + esc(saved.name) + '</h1><p>' + esc(saved.profession) + '</p><p class="note">Профиль открыт на этом устройстве. Документы не проверяются.</p>';
-      }
+      if (!saved) html = '<h1>Профиль</h1><form class="card" id="profile-form"><label>Имя<input name="name" required></label><label>Профессия<input name="profession" required></label><label>PIN из 4 цифр<input name="pin" inputmode="numeric" pattern="[0-9]{4}" required></label><button class="btn" type="submit">Сохранить на этом устройстве</button><p class="note">Почта не нужна. PIN остаётся только в этом браузере.</p></form>';
+      else if (locked()) html = '<h1>Гость</h1><form class="card" id="unlock-form"><label>PIN<input name="pin" inputmode="numeric" required></label><button class="btn" type="submit">Открыть профиль</button></form>';
+      else html = "<h1>" + esc(saved.name) + "</h1><p>" + esc(saved.profession) + '</p><p class="note">Профиль открыт на этом устройстве. Документы не проверяются.</p>';
     } else if (view === "admin") {
       html = owner() ? '<h1>Пульт</h1><p class="note">Кнопка видна только в этом браузере. Ключ записан в файле страницы, это не серверный замок.</p><button type="button" class="btn" id="leave-owner">Выйти из режима Хозяина</button>' : '<p class="card">Пульт закрыт.</p>';
     }
@@ -399,11 +507,30 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     if (button) {
       view = button.getAttribute("data-view");
       if (view === "admin" && !owner()) view = "home";
+      paint();
       pull();
       return;
     }
     var tab = ev.target.closest("[data-tab]");
     if (tab) { ideaTab = tab.getAttribute("data-tab"); paint(); return; }
+    var feed = ev.target.closest("[data-feed]");
+    if (feed) { feedMode = feed.getAttribute("data-feed"); paint(); return; }
+    if (ev.target.closest("[data-trash-toggle]")) { showTrash = !showTrash; paint(); return; }
+    if (ev.target.closest("[data-clear-file]")) { pendingFile = null; paint(); return; }
+    var follow = ev.target.closest("[data-follow]");
+    if (follow) {
+      var list = follows();
+      var id = follow.getAttribute("data-follow");
+      var at = list.indexOf(id);
+      if (at >= 0) list.splice(at, 1); else list.push(id);
+      localStorage.setItem("planet_follows", JSON.stringify(list));
+      paint();
+      return;
+    }
+    var dm = ev.target.closest("[data-open-dm]");
+    if (dm) { openThread = { kind: "dm", id: dm.getAttribute("data-open-dm"), name: dm.getAttribute("data-open-name") }; pendingFile = null; paint(); return; }
+    var room = ev.target.closest("[data-open-group]");
+    if (room) { openThread = { kind: "group", id: room.getAttribute("data-open-group"), name: room.getAttribute("data-open-name") }; pendingFile = null; paint(); return; }
     var scoreButton = ev.target.closest("[data-score]");
     if (scoreButton) {
       score = Number(scoreButton.getAttribute("data-score"));
@@ -412,11 +539,23 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     }
     var dialButton = ev.target.closest("[data-dial]");
     if (dialButton) dial(dialButton.getAttribute("data-dial"));
+    var binPost = ev.target.closest("[data-bin-post]");
+    if (binPost && me()) send("/api/posts/" + binPost.getAttribute("data-bin-post") + "/remove", { authorName: me().name, authorId: me().id }).then(function (result) {
+      if (!result.ok) window.alert(result.data.error || "Не удалось убрать запись.");
+      pull();
+    });
+    var binMessage = ev.target.closest("[data-bin-message]");
+    if (binMessage && me()) send("/api/messages/" + binMessage.getAttribute("data-bin-message") + "/remove", { fromId: me().id }).then(function (result) {
+      if (!result.ok) window.alert(result.data.error || "Не удалось убрать сообщение.");
+      pull();
+    });
+    var restore = ev.target.closest("[data-restore]");
+    if (restore) send("/api/trash/" + restore.getAttribute("data-restore") + "/restore", {}).then(pull);
     var reviewButton = ev.target.closest("[data-send-review]");
     if (reviewButton && me()) {
-      var id = reviewButton.getAttribute("data-send-review");
-      var field = document.querySelector('[data-review="' + id + '"]');
-      send("/api/ideas/" + id + "/review", { authorId: me().id, authorName: me().name, score: score, text: field ? field.value : "" }).then(function (result) {
+      var reviewId = reviewButton.getAttribute("data-send-review");
+      var field = document.querySelector('[data-review="' + reviewId + '"]');
+      send("/api/ideas/" + reviewId + "/review", { authorId: me().id, authorName: me().name, score: score, text: field ? field.value : "" }).then(function (result) {
         if (!result.ok) window.alert(result.data.error || "Оценка не сохранена.");
         score = 0;
         pull();
@@ -437,6 +576,20 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
       });
     }
     if (ev.target.id === "leave-owner") leaveOwner();
+  });
+
+  document.body.addEventListener("change", function (ev) {
+    var pick = ev.target.getAttribute && ev.target.getAttribute("data-pick");
+    if (!pick) return;
+    var file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    if (file.size > 7 * 1024 * 1024) { window.alert("Файл больше 7 МБ."); ev.target.value = ""; return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      pendingFile = { name: file.name, mime: file.type || (pick === "video" ? "video/mp4" : "application/octet-stream"), data: String(reader.result || "") };
+      paint();
+    };
+    reader.readAsDataURL(file);
   });
 
   document.body.addEventListener("submit", function (ev) {
@@ -469,17 +622,31 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
       return;
     }
     if (!person) return;
-    if (form.id === "post-form") send("/api/posts", { title: data.get("title"), body: data.get("body"), sphere: data.get("sphere"), authorName: person.name }).then(pull);
+    if (form.id === "post-form") {
+      var post = { title: data.get("title"), body: data.get("body"), sphere: data.get("sphere"), authorName: person.name, authorId: person.id };
+      if (pendingFile) post.file = pendingFile;
+      send("/api/posts", post).then(function (result) {
+        if (!result.ok) window.alert(result.data.error || "Запись не опубликована.");
+        pendingFile = null;
+        pull();
+      });
+    }
     if (form.id === "idea-form") send("/api/ideas", { authorId: person.id, authorName: person.name, title: data.get("title"), body: data.get("body") }).then(pull);
-    if (form.id === "group-form") send("/api/groups", { name: data.get("name"), closed: data.get("closed") === "on", authorName: person.name }).then(pull);
-    if (form.id === "message-form") send("/api/messages", { fromId: person.id, fromName: person.name, toId: data.get("toId"), text: data.get("text") }).then(function (result) {
-      if (!result.ok) window.alert(result.data.error || "Сообщение не ушло.");
-      pull();
-    });
+    if (form.id === "group-form") send("/api/groups", { name: data.get("name"), closed: data.get("closed") === "on", authorName: person.name, authorId: person.id }).then(pull);
     if (form.id === "gift-form") send("/api/gifts", { authorName: person.name, amount: data.get("amount"), note: data.get("note") }).then(function (result) {
       if (!result.ok) window.alert(result.data.error || "Запись не сохранена.");
       pull();
     });
+    if (form.id === "composer") {
+      if (!openThread) return;
+      var payload = { fromId: person.id, fromName: person.name, toId: openThread.id, toName: openThread.name, kind: openThread.kind, text: String(data.get("text") || "").trim() };
+      if (pendingFile) payload.file = pendingFile;
+      send("/api/messages", payload).then(function (result) {
+        if (!result.ok) { window.alert(result.data.error || "Сообщение не ушло."); return; }
+        pendingFile = null;
+        pull();
+      });
+    }
   });
 
   document.getElementById("lang-selector").addEventListener("change", function () {
@@ -526,6 +693,7 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
   showAdmin(owner());
   startPeer();
   setInterval(beat, 25000);
+  setInterval(refreshQuiet, 3000);
   pull();
 })();
 </script>
