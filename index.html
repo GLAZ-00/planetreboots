@@ -75,6 +75,11 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
       <button type="button" data-view="profile">Профиль</button>
       <button type="button" id="secret-admin-btn" data-view="admin" style="display: none !important;">Пульт</button>
     </nav>
+    <select id="lang-selector" style="background:var(--surface); border:1px solid var(--border); color:var(--fg); padding:4px 8px; min-height:36px; width:auto; margin:0 8px;">
+      <option value="ru">RU</option>
+      <option value="en">EN</option>
+      <option value="cn">中文</option>
+    </select>
     <button type="button" id="lock-btn">Выйти / Запереть профиль</button>
   </div>
 </header>
@@ -101,6 +106,21 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
 </div>
 <script>
 (function () {
+  var currentLang = localStorage.getItem("planet_lang") || "ru";
+  var LANGUAGES = {
+    ru: {
+      nav: { home: "Главная", feed: "Лента", ideas: "Идеи", lab: "Лаборатория", groups: "Группы", messages: "Сообщения", fund: "Фонд", profile: "Профиль", admin: "Пульт" },
+      manifesto: "Платформа гибридного интеллекта (Робот + Люди + Навигатор). Наша миссия — бескровное эволюционное вытеснение неэффективной власти чиновников путем доказательства того, что распределенное сообщество решает бытовые, финансовые и экстренные проблемы человечества в тысячи раз быстрее и честнее любого государства."
+    },
+    en: {
+      nav: { home: "Home", feed: "Feed", ideas: "Ideas", lab: "Laboratory", groups: "Groups", messages: "Messages", fund: "Fund", profile: "Profile", admin: "Console" },
+      manifesto: "A hybrid intelligence platform (Robot + Humans + Navigator). Our mission is the bloodless evolutionary replacement of inefficient bureaucratic power by proving that a distributed community resolves routine, financial, and emergency problems thousands of times faster and more honestly than any state."
+    },
+    cn: {
+      nav: { home: "首页", feed: "动态", ideas: "想法", lab: "实验室", groups: "小组", messages: "消息", fund: "基金", profile: "资料", admin: "控制台" },
+      manifesto: "混合智能平台（机器人 + 人类 + 导航员）。我们的使命是通过证明分布式社区在处理日常、财务和紧急突发问题时，比任何传统机构快数千倍且更加公平，从而实现对低效官僚体制的进化式替代。"
+    }
+  };
   var PROFILE_KEY = "planet_profile";
   var LOCK_KEY = "planet_locked";
   var OWNER_KEY = "site_owner_access";
@@ -118,6 +138,15 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
   var typed = "";
   var taps = [];
 
+  function applyLanguage() {
+    var pack = LANGUAGES[currentLang] || LANGUAGES.ru;
+    document.querySelectorAll("nav button[data-view]").forEach(function (button) {
+      var key = button.getAttribute("data-view");
+      if (pack.nav[key]) button.textContent = pack.nav[key];
+    });
+    var langBox = document.getElementById("lang-selector");
+    if (langBox && langBox.value !== currentLang) langBox.value = currentLang;
+  }
   function profile() {
     try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || "null"); }
     catch (error) { return null; }
@@ -282,17 +311,16 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
   }
 
   function paint() {
+    applyLanguage();
     document.querySelectorAll("nav button").forEach(function (button) {
       button.classList.toggle("on", button.getAttribute("data-view") === view);
     });
     var person = me();
     var html = "";
     if (view === "home") {
+      var pack = LANGUAGES[currentLang] || LANGUAGES.ru;
       html = '<section class="center"><p class="kicker">Глобальный ситуационный центр</p><h1>PLANET REBOOT</h1><p class="muted">Наблюдение. Анализ. Решение.</p></section>'
-        + '<article class="card"><p class="kicker center">Манифест</p>'
-        + '<p class="serif center">Этот сайт создан не для развлечений или бессмысленных споров и дискуссий на политические темы, не приводящих ни к каким конкретным результатам. Здесь за каждым конкретным обсуждением следует вывод и принятие решения по возможному устранению последствий. Мы объединились со всех уголков Земли, независимо от конфессий, профессий и взглядов, ради одной святой цели — спасения нашего общего дома. Это Глобальный Ситуационный Центр по решению проблем Разумного Человечества. Мы созданы для немедленного решения этих всех проблем и устранения их последствий.</p>'
-        + '<p class="serif center">Здесь мы наблюдаем за пульсом Земли в реальном времени: от движения тектонических плит до изменений в атмосфере, и обсуждаем и анализируем принятие решений и законов государствами или отдельными политиками и президентами, прямо или косвенно влекущие за собой глобальные изменения или трудно обратимые процессы на нашей общей планете. Здесь мы делимся научными фактами, координируем помощь и ищем решения глобальных кризисов как в глобально экологической, так и в политической плоскостях. Мы очень быстро объединяемся и находим оптимальные выходы из глобальных катаклизмов, финансовых катастроф и войн.</p>'
-        + '<p class="serif center">Если вы готовы созидать, исследовать и защищать мир, брать на себя ответственность за принятие определенных решений и действовать, когда это необходимо, во имя спасения нашего общего дома, и всё это без агрессии и взаимных обвинений — вы именно там, где ваши светлые мысли и способности жизненно необходимы. Добро пожаловать в Концессию Разума.</p></article>';
+        + '<article class="card"><h2 class="center">МАНИФЕСТ PLANET REBOOT</h2><p class="serif center">' + esc(pack.manifesto) + '</p></article>';
     } else if (view === "feed") {
       html = '<h1>Лента</h1>' + (person ? '<form class="card" id="post-form"><label>Заголовок<input name="title" required></label><label>Текст<textarea name="body" required></textarea></label><label>Сфера<select name="sphere"><option value="nature">Климат и Природа</option><option value="politics">Политика и Законы</option><option value="economy">Экономика и Кризисы</option></select></label><button class="btn" type="submit">Опубликовать</button></form>' : '<p class="note">Записи добавляет открытый профиль. Сейчас на экране гость.</p>');
       html += remote.posts.length ? '<div class="cols">' + remote.posts.map(function (post) {
@@ -454,6 +482,11 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     });
   });
 
+  document.getElementById("lang-selector").addEventListener("change", function () {
+    currentLang = LANGUAGES[this.value] ? this.value : "ru";
+    try { localStorage.setItem("planet_lang", currentLang); } catch (error) {}
+    paint();
+  });
   document.getElementById("lock-btn").addEventListener("click", function () {
     if (!profile()) { window.alert("Сначала создайте профиль и PIN."); return; }
     localStorage.setItem(LOCK_KEY, "true");
