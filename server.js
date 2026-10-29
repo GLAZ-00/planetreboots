@@ -8,14 +8,25 @@ const { ExpressPeerServer } = require("peer");
 
 const PORT = Number(process.env.PORT) || 8080;
 const DATA_FILE = path.join(__dirname, "data.json");
-const STOP_WORDS = ["дурак", "дурака", "идиот", "тупой", "тупая", "дебил", "мразь", "убей", "ненавижу", "отстой"];
+const STOP_WORDS = [
+  "дурак",
+  "дурака",
+  "идиот",
+  "тупой",
+  "тупая",
+  "дебил",
+  "мразь",
+  "убей",
+  "ненавижу",
+  "отстой"
+];
 
 const app = express();
 const server = http.createServer(app);
 const peerServer = ExpressPeerServer(server, { path: "/", proxied: true });
 
 app.disable("x-powered-by");
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "200kb" }));
 app.use("/peerjs", peerServer);
 
 function emptyDb() {
@@ -46,21 +57,22 @@ function uid() {
 }
 
 function hasAbuse(text) {
-  const lower = String(text || "").toLowerCase();
+  const lower = text.toLowerCase();
   return STOP_WORDS.some((word) => lower.includes(word));
 }
 
 function average(reviews) {
   if (!reviews.length) return 0;
-  return reviews.reduce((total, review) => total + review.score, 0) / reviews.length;
+  const sum = reviews.reduce((total, review) => total + review.score, 0);
+  return sum / reviews.length;
 }
 
 function publicState() {
   const now = Date.now();
   const people = Object.keys(db.presence)
     .map((id) => db.presence[id])
-    .filter((person) => person && now - person.seen < 40000);
-  const fund = db.gifts.reduce((total, gift) => total + Number(gift.amount || 0), 0);
+    .filter((person) => now - person.seen < 40000);
+  const raised = db.gifts.reduce((total, gift) => total + gift.amount, 0);
   return {
     posts: db.posts,
     groups: db.groups,
@@ -68,7 +80,7 @@ function publicState() {
     ideas: db.ideas,
     gifts: db.gifts,
     people: people,
-    fund: fund
+    fund: raised
   };
 }
 
@@ -76,18 +88,8 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.get("/bg.png", (req, res) => {
-  const file = path.join(__dirname, "bg.png");
-  if (fs.existsSync(file)) res.sendFile(file);
-  else res.status(404).end();
-});
-
 app.get("/api/state", (req, res) => {
   res.json(publicState());
-});
-
-app.get("/api/messages", (req, res) => {
-  res.json(db.messages);
 });
 
 app.post("/api/presence", (req, res) => {
@@ -117,7 +119,14 @@ app.post("/api/posts", (req, res) => {
     res.status(400).json({ error: "Неизвестная сфера." });
     return;
   }
-  db.posts.unshift({ id: uid(), title: title, body: body, sphere: sphere, authorName: authorName, at: Date.now() });
+  db.posts.unshift({
+    id: uid(),
+    title: title,
+    body: body,
+    sphere: sphere,
+    authorName: authorName,
+    at: Date.now()
+  });
   saveDb();
   res.json({ ok: true });
 });
@@ -125,7 +134,6 @@ app.post("/api/posts", (req, res) => {
 app.post("/api/groups", (req, res) => {
   const name = clean(req.body.name, 80);
   const authorName = clean(req.body.authorName, 80);
-  const authorId = clean(req.body.authorId, 80);
   if (!name || !authorName) {
     res.status(400).json({ error: "Нужно название группы." });
     return;
@@ -135,7 +143,6 @@ app.post("/api/groups", (req, res) => {
     name: name,
     closed: Boolean(req.body.closed),
     authorName: authorName,
-    authorId: authorId,
     at: Date.now()
   });
   saveDb();
@@ -146,46 +153,16 @@ app.post("/api/messages", (req, res) => {
   const fromId = clean(req.body.fromId, 80);
   const fromName = clean(req.body.fromName, 80);
   const toId = clean(req.body.toId, 80);
-  const toName = clean(req.body.toName, 80);
-  const kind = req.body.kind === "group" ? "group" : "dm";
-  const text = clean(req.body.text, 4000);
-  if (!fromId || !fromName || !toId) {
+  const text = clean(req.body.text, 1000);
+  if (!fromId || !fromName || !toId || !text) {
     res.status(400).json({ error: "Сообщение неполное." });
     return;
   }
-  if (text && hasAbuse(text)) {
+  if (hasAbuse(text)) {
     res.status(400).json({ error: "Сообщение не отправлено: в нём оскорбление." });
     return;
   }
-  let file = null;
-  if (req.body.file && req.body.file.data) {
-    const data = String(req.body.file.data);
-    const mime = clean(req.body.file.mime, 80);
-    if (data.length > 8000000 || data.indexOf("data:") !== 0 || data.indexOf(";base64,") < 0) {
-      res.status(400).json({ error: "Файл не принят. Нужна картинка или документ до 7 МБ." });
-      return;
-    }
-    file = { name: clean(req.body.file.name, 120) || "file", mime: mime || "application/octet-stream", data: data };
-  }
-  if (!text && !file) {
-    res.status(400).json({ error: "Напишите текст или прикрепите файл." });
-    return;
-  }
-  if (kind === "group" && !db.groups.some((group) => group.id === toId)) {
-    res.status(404).json({ error: "Такой группы нет." });
-    return;
-  }
-  db.messages.push({
-    id: uid(),
-    kind: kind,
-    fromId: fromId,
-    fromName: fromName,
-    toId: toId,
-    toName: toName,
-    text: text,
-    file: file,
-    at: Date.now()
-  });
+  db.messages.push({ id: uid(), fromId: fromId, fromName: fromName, toId: toId, text: text, at: Date.now() });
   saveDb();
   res.json({ ok: true });
 });
@@ -263,8 +240,11 @@ app.post("/api/ideas/:id/review", (req, res) => {
   }
   idea.reviews.push({ authorId: authorId, authorName: authorName, score: score, text: text, at: Date.now() });
   const avg = average(idea.reviews);
-  if (idea.reviews.length >= 1 && avg < 3) idea.level = "lab";
-  else if (idea.reviews.length >= 2 && avg >= 6) idea.level = 2;
+  if (idea.reviews.length >= 1 && avg < 3) {
+    idea.level = "lab";
+  } else if (idea.reviews.length >= 2 && avg >= 6) {
+    idea.level = 2;
+  }
   saveDb();
   res.json({ ok: true, level: idea.level });
 });
@@ -329,6 +309,6 @@ app.post("/api/ideas/:id/steps", (req, res) => {
   res.json({ ok: true });
 });
 
-server.listen(PORT, "0.0.0.0", () => {
+server.listen(PORT, () => {
   console.log("Planet Reboot listening on " + PORT);
 });
