@@ -156,12 +156,12 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
   function applyLanguage() {
     var pack = LANGUAGES[currentLang] || LANGUAGES.ru;
     document.querySelectorAll("nav button[data-view]").forEach(function (button) {
-      var key = button.getAttribute("data-view");
-      if (pack.nav[key]) button.textContent = pack.nav[key];
+        var key = button.getAttribute("data-view");
+        if (pack.nav[key]) button.textContent = pack.nav[key];
     });
     var langBox = document.getElementById("lang-selector");
     if (langBox && langBox.value !== currentLang) langBox.value = currentLang;
-  }
+}
   function profile() {
     try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || "null"); }
     catch (error) { return null; }
