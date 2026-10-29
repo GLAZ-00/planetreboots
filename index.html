@@ -174,8 +174,7 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
       take(data);
       paint();
     }).catch(function () {
-      var app = document.getElementById("app");
-      if (app && !app.innerHTML) app.innerHTML = '<p class="card">Сервер не ответил. Обновите страницу.</p>';
+      try { paint(); } catch (error) {}
     });
   }
   function send(url, body) {
@@ -198,7 +197,7 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     if (!log) return;
     fetch("/api/state").then(function (res) { return res.json(); }).then(function (data) {
       take(data);
-       var box = document.getElementById("thread-log");
+      var box = document.getElementById("thread-log");
       if (!box) return;
       box.innerHTML = threadHtml();
     }).catch(function () {});
@@ -334,7 +333,19 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
 Прошлые версии" + (history || "<p>Прежних версий нет.</p>") + "" + actions + "</article>";
   }
 
+  function ensureLists() {
+    if (!remote || typeof remote !== "object") remote = {};
+    remote.posts = Array.isArray(remote.posts) ? remote.posts : [];
+    remote.groups = Array.isArray(remote.groups) ? remote.groups : [];
+    remote.messages = Array.isArray(remote.messages) ? remote.messages : [];
+    remote.ideas = Array.isArray(remote.ideas) ? remote.ideas : [];
+    remote.gifts = Array.isArray(remote.gifts) ? remote.gifts : [];
+    remote.people = Array.isArray(remote.people) ? remote.people : [];
+    remote.fund = Number(remote.fund) || 0;
+  }
+
   function paint() {
+    ensureLists();
     document.querySelectorAll("nav button").forEach(function (button) {
       button.classList.toggle("on", button.getAttribute("data-view") === view);
     });
@@ -388,7 +399,7 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
       }).join("") : '<p class="note">Диалогов пока нет.</p>';
       html = "<h1>Сообщения</h1>" + chatShell("Диалоги", side);
       if (!person) html += '<p class="note">Гость читает открытый диалог, но не отправляет.</p>';
-    } else if (view === "fund") {
+      } else if (view === "fund") {
       html = '<h1>Фонд</h1><p style="font-size:clamp(2rem,6vw,3rem);color:var(--primary);margin:0">' + money(remote.fund) + '</p><p class="note">Сумма собрана из записей на сервере. Это не платёж.</p>';
       html += person ? '<form class="card" id="gift-form"><label>Сумма, $<input name="amount" inputmode="decimal" required></label><label>На что<input name="note"></label><button class="btn" type="submit">Записать поддержку</button></form>' : "";
       html += remote.gifts.length ? remote.gifts.map(function (gift) {
@@ -399,7 +410,7 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
       if (!saved) html = '<h1>Профиль</h1><form class="card" id="profile-form"><label>Имя<input name="name" required></label><label>Профессия<input name="profession" required></label><label>PIN из 4 цифр<input name="pin" inputmode="numeric" pattern="[0-9]{4}" required></label><button class="btn" type="submit">Сохранить на этом устройстве</button><p class="note">Почта не нужна. PIN остаётся только в этом браузере.</p></form>';
       else if (locked()) html = '<h1>Гость</h1><form class="card" id="unlock-form"><label>PIN<input name="pin" inputmode="numeric" required></label><button class="btn" type="submit">Открыть профиль</button></form>';
       else html = "<h1>" + esc(saved.name) + "</h1><p>" + esc(saved.profession) + '</p><p class="note">Профиль открыт на этом устройстве.</p>';
-       } else if (view === "admin") {
+    } else if (view === "admin") {
       html = owner() ? '<h1>Пульт</h1><p class="note">Кнопка видна только в этом браузере.</p><button type="button" class="btn" id="leave-owner">Выйти из режима Хозяина</button>' : '<p class="card">Пульт закрыт.</p>';
     }
     document.getElementById("app").innerHTML = html;
@@ -541,11 +552,16 @@ video.cam{width:100%;height:100%;object-fit:contain !important;object-position:c
     if (taps.length >= 3) { taps = []; askOwner(); }
   });
 
-  showAdmin(owner());
-  startPeer();
-  setInterval(beat, 25000);
-  setInterval(refreshChat, 3000);
-  pull();
+  window.addEventListener("load", function () {
+    try { showAdmin(owner()); } catch (error) {}
+    try { paint(); } catch (error) {}
+    try { startPeer(); } catch (error) {}
+    try { setInterval(beat, 25000); } catch (error) {}
+    try { setInterval(refreshChat, 3000); } catch (error) {}
+    try { pull(); } catch (error) {
+      try { paint(); } catch (ignore) {}
+    }
+  });
 })();
 </script>
 </body>
